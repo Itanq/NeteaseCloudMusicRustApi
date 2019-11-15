@@ -1,8 +1,9 @@
-POST http://127.0.0.1:8000/ HTTP/1.1
+POST http://127.0.0.1:8000/song/url HTTP/1.1
 Content-Type: application/json
 
 {
-    "username": "zmant"
+  "id": "347230",
+  "br": 999000
 }
 
 ###
