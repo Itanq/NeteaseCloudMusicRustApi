@@ -15,6 +15,7 @@ lazy_static!{
     static ref LINUX_API_KEY: Vec<u8> = "rFgB&h#%2?^eDg:Q".as_bytes().to_vec();
     static ref BASE62: Vec<u8> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".as_bytes().to_vec();
     static ref RSA_PUBLIC_KEY: Vec<u8> = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----".as_bytes().to_vec();
+    static ref EAPIKEY: Vec<u8> = "e82ckenh8dichen8".as_bytes().to_vec();
 }
 
 pub struct Crypto;
@@ -28,6 +29,28 @@ pub enum AesMode {
 }
 
 impl Crypto {
+    pub fn eapi(url: &str, text: &str) -> String {
+        let message = format!("nobody{}use{}md5forencrypt",
+            url, text
+        );
+        let digest = hex::encode(hash(MessageDigest::md5(), message.as_bytes()).unwrap());
+        let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}",
+            url, text, digest
+        );
+        let params = Crypto::aes_encrypt(
+            &data,
+            &*EAPIKEY,
+            ecb,
+            |t: &Vec<u8>| hex::encode_upper(t)
+        );
+        println!("params={}", params);
+        querystring::stringify(
+            vec![
+                ("params", &params)
+            ]
+        )
+    }
+
     pub fn weapi(text: &str) -> String {
         let mut secret_key = [0u8; 16];
         OsRng.fill_bytes(&mut secret_key);

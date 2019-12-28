@@ -1,6 +1,7 @@
 
 use actix_web::{
-    App, HttpRequest, FromRequest, HttpResponse, HttpServer, Responder,
+    HttpRequest, HttpResponse, HttpServer,
+    Responder, App, FromRequest,
     web, error, middleware, get,
 };
 use actix_web::http::{ Uri, };
@@ -10,6 +11,10 @@ use reqwest::header::{
 };
 use serde::Deserialize;
 use listenfd::ListenFd;
+use urlqstring::{
+    querystring,
+    querystring::QueryParamGet
+};
 
 use super::api::{
     SongInfo,
@@ -20,30 +25,68 @@ use crate::api;
 use crate::api::{
     CommentInfo, Identify, CellPhoneLoginInfo, MvInfo,
     TopMvInfo, TopAlbumInfo, TopList, ArtistAlbum,
-    NewSong, DjInfo, Identity, PageIndex, CateId
+    NewSong, DjInfo, Identity, PageIndex, CateId,
+    PlayListDetail, ResourceType,NickName,
 };
 use actix_web::web::service;
 use actix_http::error::PayloadError::Http2Payload;
 use actix_http::http::HeaderValue;
+use lazy_static::lazy_static;
+use actix_http::cookie::Cookie;
+use actix_web::dev::RequestHead;
+use std::ops::Deref;
+
+lazy_static!{
+    static ref CONTENT_TP: HeaderValue = HeaderValue::from_static("application/json; charset=utf-8");
+}
 
 fn index_root() -> impl Responder {
     println!("index_root.....");
     HttpResponse::Ok().body("Hello World!")
 }
 
-fn index_song(info: web::Query<SongInfo>) -> impl Responder {
-
-    let url = "https://music.163.com/weapi/song/enhance/player/url";
-
-    let value = info.into_inner();
-
+#[get("/activate/init/profile")]
+fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
+    let url = "http://music.163.com/eapi/activate/initProfile";
+    let cookie = req.headers().get("Cookie").unwrap();
+    let value = querystring::json(req.query_string());
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "eapi",
+                url,
+                &value
+            )
+        )
+}
+
+#[get("/song/url")]
+fn index_song_url( req: HttpRequest ) -> impl Responder {
+    let url = "https://music.163.com/api/song/enhance/player/url";
+    let query = req.query_string().replace_key("id", "ids");
+    let query = query.deref();
+    let br = query.get_value("br").unwrap_or("&br=999000");
+    let ids = query.get_value("ids").unwrap();
+    let query = query.replace_value(
+        ids,
+        &format!("[{}]", ids)
+    );
+    let query = query + br;
+    let value = querystring::json(&query);
+    let cookies = req.headers().get("Cookie");
+    if !headers.contains_key("MUSIC_U") {
+
+    }
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
             "",
-            "weapi",
+            "linuxapi",
             url,
             &value
         )
@@ -59,7 +102,7 @@ fn index_mv(info: web::Query<MvInfo>) -> impl Responder {
     println!("text={}", value.to_string());
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -76,7 +119,7 @@ fn index_top_mv(info: web::Query<TopMvInfo>) -> impl Responder {
     let url = "https://music.163.com/weapi/mv/toplist";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -92,7 +135,7 @@ fn index_top_mv(info: web::Query<TopMvInfo>) -> impl Responder {
 fn index_artist_album(web::Query(info): web::Query<ArtistAlbum>) -> impl Responder {
     let url = format!("https://music.163.com/weapi/artist/albums/{}", info.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -109,7 +152,7 @@ fn index_artist_desc(info: web::Query<Identity>) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/introduction";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -125,7 +168,7 @@ fn index_artist_desc(info: web::Query<Identity>) -> impl Responder {
 fn index_album(info: web::Query<Identity>) -> impl Responder {
     let url = &format!("https://music.163.com/weapi/v1/album/{}", info.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -138,8 +181,22 @@ fn index_album(info: web::Query<Identity>) -> impl Responder {
 }
 
 #[get("/album/detail/dynamic")]
-fn index_album_detail(info: web::Query<Identity>) -> impl Responder {
-    let url = "";
+fn index_album_detail(
+    web::Query(info): web::Query<Identity>,
+    header: HttpRequest
+) -> impl Responder {
+    let url = "https://music.163.com/api/album/detail/dynamic";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
 }
 
 #[get("/top/album")]
@@ -147,7 +204,7 @@ fn index_top_album(info: web::Query<TopAlbumInfo>) -> impl Responder {
     let url = "https://music.163.com/weapi/album/new";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -160,10 +217,12 @@ fn index_top_album(info: web::Query<TopAlbumInfo>) -> impl Responder {
 }
 
 #[get("/album/newest")]
-fn index_album_newest() -> impl Responder {
+fn index_album_newest(msg: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/discovery/newAlbum";
+    println!("msg: {:?}", msg.headers().get("Cookie"));
+    println!("query_string={}", msg.query_string());
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -176,11 +235,11 @@ fn index_album_newest() -> impl Responder {
 }
 
 #[get("/album/sublist")]
-fn index_album_sublist(info: web::Query<TopMvInfo>) -> impl Responder {
+fn index_album_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/album/sublist";
-    let value = info.into_inner();
+    let value = querystring::json(req.query_string());
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -192,11 +251,18 @@ fn index_album_sublist(info: web::Query<TopMvInfo>) -> impl Responder {
     )
 }
 
+#[get("/album/sub")]
+fn index_album_sub(req: HttpRequest ) -> impl Responder {
+    let query = req.query_string();
+
+    let url = format!("https://music.163.com/api/album/{}", query);
+}
+
 fn index_song_comment(info: web::Query<CommentInfo>) ->impl Responder {
     let value = info.into_inner();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_SO_4_{}", value.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -209,11 +275,14 @@ fn index_song_comment(info: web::Query<CommentInfo>) ->impl Responder {
 }
 
 #[get("/comment/album")]
-fn index_album_comment(info: web::Query<CommentInfo>) -> impl Responder {
-    let value = info.into_inner();
-    let url = format!("https://music.163.com/weapi/v1/resource/comments/R_AL_3_{}", value.id);
+fn index_album_comment(req: HttpRequest) -> impl Responder {
+    let query_string = req.query_string();
+    let value = querystring::json(query_string);
+    let id = query_string.get_value("id").unwrap_or("");
+    println!("query_string:{}; value:{}, id:{}", query_string, value, id);
+    let url = format!("https://music.163.com/weapi/v1/resource/comments/R_AL_3_{}", id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -230,7 +299,7 @@ fn index_playlist_comment(info: web::Query<CommentInfo>) -> impl Responder {
     let value = info.into_inner();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_PL_0_{}", value.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -247,7 +316,7 @@ fn index_mv_comment(info: web::Query<CommentInfo>) -> impl Responder {
     let value = info.into_inner();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_MV_5_{}", value.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -264,7 +333,7 @@ fn index_dj_comment(info: web::Query<CommentInfo>) -> impl Responder {
     let value = info.into_inner();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_DJ_1_{}", value.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -281,7 +350,7 @@ fn index_video_comment(info: web::Query<CommentInfo>) -> impl Responder {
     let value = info.into_inner();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_VI_62_{}", value.id);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -313,7 +382,7 @@ fn index_hot_comment(info: web::Query<CommentInfo>, types: web::Path<String>) ->
     let url = format!("https://music.163.com/weapi/v1/resource/hotcomments/{}{}", comment_type, value.id);
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -331,7 +400,7 @@ fn index_song_lyric(info: web::Query<Identify>) -> impl Responder {
     let value = info.into_inner();
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -347,7 +416,7 @@ fn index_song_lyric(info: web::Query<Identify>) -> impl Responder {
 fn index_playlist_catlist() -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/catalogue";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -363,7 +432,7 @@ fn index_playlist_catlist() -> impl Responder {
 fn index_playlist_hot() -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/hottags";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -375,12 +444,33 @@ fn index_playlist_hot() -> impl Responder {
     )
 }
 
-#[get("/top/list")]
-fn index_top_list(info: web::Query<TopList>) -> impl Responder {
+#[get("/playlist/detail")]
+fn index_playlist_detail(web::Query(info): web::Query<PlayListDetail>, headers: HttpRequest)
+    -> impl Responder
+{
     let url = "https://music.163.com/weapi/v3/playlist/detail";
+    let cookie = headers.headers().get("Cookie").unwrap();
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "linuxapi",
+                url,
+                &info
+            )
+        )
+}
+
+#[get("/top/list")]
+fn index_top_list(info: web::Query<TopList>, headers: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v3/playlist/detail";
+    let cookie = headers.headers().get("Cookie").unwrap();
+    println!("Cookie: {:?}", cookie.to_str());
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "Post",
@@ -396,7 +486,7 @@ fn index_top_list(info: web::Query<TopList>) -> impl Responder {
 fn index_toplist_detail() -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/detail";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -413,7 +503,7 @@ fn index_toplist_artist() -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/artist";
     let value = format!(r#"{{"type":"1","limit":"100","offset":"0","total":"true"}}"#);
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -431,7 +521,7 @@ fn index_top_song(info: web::Query<NewSong>) -> impl Responder {
     let value = info.into_inner();
     HttpResponse::Ok()
         .content_type(
-            HeaderValue::from_static("application/json; charset=utf-8")
+            &*CONTENT_TP
         )
         .body(
         api::create_request(
@@ -444,11 +534,27 @@ fn index_top_song(info: web::Query<NewSong>) -> impl Responder {
     )
 }
 
+#[get("/banner")]
+fn index_banner(web::Query(info): web::Query<ResourceType>) -> impl Responder {
+    let url = "https://music.163.com/api/v2/banner/get";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "linuxapi",
+                url,
+                &info
+            )
+        )
+}
+
 #[get("/dj/banner")]
 fn index_dj_banner() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/banner/get";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -465,7 +571,7 @@ fn index_dj_hot(info: web::Query<DjInfo>) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/hot/v1";
     let value = format!(r#"{{"cat":"undefined","cateId":"undefined","type":"undefined","categoryId":"undefined","limit":"{}","offset":"{}"}}"#, info.limit.unwrap_or(30),info.offset.unwrap_or(0));
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -481,7 +587,7 @@ fn index_dj_hot(info: web::Query<DjInfo>) -> impl Responder {
 fn index_dj_recommend() -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend/v1";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -498,7 +604,7 @@ fn index_dj_recommend_type(info: web::Query<CateId>) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -514,7 +620,7 @@ fn index_dj_recommend_type(info: web::Query<CateId>) -> impl Responder {
 fn index_dj_category_list() -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/category/get";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -530,7 +636,7 @@ fn index_dj_category_list() -> impl Responder {
 fn index_dj_category_exclude_hot() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/category/excludehot";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -546,7 +652,7 @@ fn index_dj_category_exclude_hot() -> impl Responder {
 fn index_dj_category_recommend() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/category/recommend";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -563,7 +669,7 @@ fn index_dj_program_details(info: web::Query<Identify>) -> impl Responder {
     let url = "https://music.163.com/weapi/dj/program/detail";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -580,7 +686,7 @@ fn index_dj_detail(info: web::Query<Identity>) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -597,7 +703,7 @@ fn index_dj_pay_gift(info: web::Query<DjInfo>) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/home/paygift/list?_nmclfl=1";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -624,7 +730,7 @@ fn index_dj_sub(info: web::Query<Identity>) -> impl Responder {
     );
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -641,7 +747,7 @@ fn index_dj_sub_list(info: web::Query<TopMvInfo>) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/subed";
     let value = info.into_inner();
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -674,7 +780,7 @@ fn index_login_with_email(info: web::Query<EmailLoginInfo>) -> impl Responder {
     let value = info.into_inner();
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -693,7 +799,7 @@ fn index_login_with_cellphone(info: web::Query<CellPhoneLoginInfo>) -> impl Resp
     let value = info.into_inner();
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -709,7 +815,7 @@ fn index_login_with_cellphone(info: web::Query<CellPhoneLoginInfo>) -> impl Resp
 fn index_login_refresh() -> impl Responder {
     let url = "https://music.163.com/weapi/login/token/refresh";
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -728,7 +834,7 @@ fn index_recommend_songs() -> impl Responder {
         20, 0, true
         );
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -746,7 +852,7 @@ fn index_search(info: web::Query<SearchInfo>) -> impl Responder {
     let value = info.into_inner();
 
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -758,11 +864,27 @@ fn index_search(info: web::Query<SearchInfo>) -> impl Responder {
     )
 }
 
+#[get("/search/hot/detail")]
+fn index_search_hot_detail() -> impl Responder {
+    let url = "https://music.163.com/weapi/hotsearchlist/get";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &"{}"
+            )
+        )
+}
+
 fn index_search_hot() -> impl Responder {
     let url = "https://music.163.com/weapi/search/hot";
     let value = r#"{{"type":1111}}"#;
     HttpResponse::Ok()
-        .content_type(HeaderValue::from_static("application/json; charset=utf-8"))
+        .content_type(&*CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -784,9 +906,12 @@ pub fn start_server() {
                 web::resource("/search/hot")
                     .route(web::get().to(index_search_hot))
             )
+            .service(index_activate_init_profile)
+            .service(index_search_hot_detail)
             .service(index_artist_album)
             .service(index_artist_desc)
             .service(index_album)
+            .service(index_album_detail)
             .service(index_top_album)
             .service(index_album_sublist)
             .service(index_album_newest)
@@ -801,6 +926,7 @@ pub fn start_server() {
             .service(index_dj_category_exclude_hot)
             .service(index_dj_category_list)
             .service(index_dj_hot)
+            .service(index_banner)
             .service(index_dj_banner)
             .service(index_album_comment)
             .service(index_dj_comment)
@@ -808,6 +934,7 @@ pub fn start_server() {
             .service(index_video_comment)
             .service(index_playlist_comment)
             .service(index_playlist_catlist)
+            .service(index_playlist_detail)
             .service(index_playlist_hot)
             .service(index_top_list)
             .service(index_toplist_detail)
@@ -820,21 +947,7 @@ pub fn start_server() {
             .service(index_mv)
             .service(index_top_mv)
             .service(index_recommend_songs)
-            .service(
-                web::resource("/song/url")
-                    .data(
-                        web::Query::<SongInfo>::configure(|cfg| {
-                            cfg.error_handler(|err, _req| {
-                                println!("Internal Error!! errInfo={}", err);
-                                error::InternalError::from_response(
-                                    err,
-                                    HttpResponse::Conflict().finish(),
-                                )
-                                    .into()
-                            })
-                        }),
-                    ).route(web::get().to(index_song))
-            )
+            .service(index_song_url)
             .service(
                 web::resource("/comment/music")
                     .data(

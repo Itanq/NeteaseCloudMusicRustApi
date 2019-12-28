@@ -4,7 +4,7 @@ use actix_web::{
     cookie,
 };
 use actix_web::http::{ Uri, };
-use reqwest::header::{HOST, CONTENT_TYPE, USER_AGENT, REFERER, HeaderMap, ToStrError, CONTENT_ENCODING};
+use reqwest::header::{HOST, CONTENT_TYPE, USER_AGENT, REFERER, HeaderMap, ToStrError, CONTENT_ENCODING, COOKIE};
 use reqwest::blocking::{
     ClientBuilder,
     Client,
@@ -19,6 +19,10 @@ use rand::rngs::OsRng;
 use rand::Rng;
 
 const linux_user_agent: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
+
+const banner_type: [&str; 4] = [
+    "pc", "android", "iphone", "ipad"
+];
 
 const user_agent_list: [&str; 14] = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1",
@@ -37,7 +41,7 @@ const user_agent_list: [&str; 14] = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.1058",
 ];
 
-pub const topList: [&str; 24] = [
+pub const topList: [&str; 37] = [
     "3779629", //云音乐新歌榜
     "3778678", //云音乐热歌榜
     "2884035", //云音乐原创榜
@@ -61,7 +65,20 @@ pub const topList: [&str; 24] = [
     "112463", //台湾Hito排行榜
     "3812895", //Beatport全球电子舞曲榜
     "71385702", //云音乐ACG音乐榜
-    "991319590" //云音乐嘻哈榜
+    "991319590", //云音乐说唱榜,
+    "71384707", //云音乐古典音乐榜
+    "1978921795", //云音乐电音榜
+    "2250011882", //抖音排行榜
+    "2617766278", //新声榜
+    "745956260", //云音乐韩语榜
+    "2023401535", //英国Q杂志中文版周榜
+    "2006508653", //电竞音乐榜
+    "2809513713", //云音乐欧美热歌榜
+    "2809577409", //云音乐欧美新歌榜
+    "2847251561", //说唱TOP榜
+    "3001835560", //云音乐ACG动画榜
+    "3001795926", //云音乐ACG游戏榜
+    "3001890046", //云音乐ACG VOCALOID榜
 ];
 
 
@@ -101,6 +118,7 @@ pub fn create_request<T: ToString>(
 
 
     let body = match crypto {
+        "eapi" => Crypto::eapi(url, &value.to_string()),
         "weapi" => Crypto::weapi(&value.to_string()),
         "linuxapi" => {
             let data = format!(
@@ -121,10 +139,11 @@ pub fn create_request<T: ToString>(
         _ => url,
     };
 
-    println!("url:{}; body={}",url, body);
+    println!("body={}", body);
 
     let client = ClientBuilder::new()
         .default_headers(headers)
+        .cookie_store(true)
         .build()
         .unwrap();
 
@@ -163,6 +182,17 @@ impl ToString for Identity {
 }
 
 #[derive(Deserialize)]
+pub struct NickName {
+    nickname: String
+}
+
+impl ToString for NickName {
+    fn to_string(&self) -> String {
+        format!(r#"{{"nickname":"{}"}}"#, self.nickname)
+    }
+}
+
+#[derive(Deserialize)]
 pub struct PageIndex {
     page: i32
 }
@@ -170,6 +200,18 @@ pub struct PageIndex {
 impl ToString for PageIndex {
     fn to_string(&self) -> String {
         format!(r#"{{"page":"{}"}}"#, self.page)
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ResourceType {
+    clientType: Option<usize>
+}
+
+impl ToString for ResourceType {
+    fn to_string(&self) -> String {
+        format!(r#"{{"clientType":"{}"}}"#,
+                banner_type[ self.clientType.unwrap_or(0) ] )
     }
 }
 
@@ -187,13 +229,32 @@ impl ToString for CateId {
 
 #[derive(Deserialize)]
 pub struct TopList {
-    id: String,
+    id: usize,
     n: Option<i32>
 }
 
 impl ToString for TopList {
     fn to_string(&self) -> String {
-        format!(r#"{{"id":"{}","n":"{}"}}"#, self.id, self.n.unwrap_or(10000))
+        format!(r#"{{"id":"{}","n":"{}"}}"#,
+                topList[ self.id ],
+                self.n.unwrap_or(10000))
+    }
+}
+
+#[derive(Deserialize)]
+pub struct PlayListDetail {
+    id: i32,
+    n: Option<i32>,
+    s: Option<i32>
+}
+
+impl ToString for PlayListDetail {
+    fn to_string(&self) -> String {
+        format!(r#"{{"id":"{}","n":"{}","s":"{}"}}"#,
+                self.id,
+                self.n.unwrap_or(10000),
+                self.s.unwrap_or(8)
+        )
     }
 }
 
