@@ -18,11 +18,25 @@ use base64::CharacterSet::Crypt;
 use rand::rngs::OsRng;
 use rand::Rng;
 
-const linux_user_agent: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
-
-const banner_type: [&str; 4] = [
+pub const banner_type: [&str; 4] = [
     "pc", "android", "iphone", "ipad"
 ];
+
+pub const resource_type: [&str; 7] = [
+    "R_SO_4_",  //  歌曲
+    "R_MV_5_",  //  MV
+    "A_PL_0_",  //  歌单
+    "R_AL_3_",  //  专辑
+    "A_DJ_1_",  //  电台,
+    "R_VI_62_", //  视频
+    "A_EV_2_"   //  动态
+];
+
+pub const operator: [&str; 3] = [
+    "delete", "add", "reply"
+];
+
+const linux_user_agent: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
 
 const user_agent_list: [&str; 14] = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1",
@@ -82,12 +96,12 @@ pub const topList: [&str; 37] = [
 ];
 
 
-pub fn create_request<T: ToString>(
+pub fn create_request(
     method: &str,
     ua: &str,
     crypto: &str,
     url: &str,
-    value: &T
+    value: &str
     ) -> serde_json::Value {
 
     let mut headers = HeaderMap::new();
@@ -118,18 +132,18 @@ pub fn create_request<T: ToString>(
 
 
     let body = match crypto {
-        "eapi" => Crypto::eapi(url, &value.to_string()),
-        "weapi" => Crypto::weapi(&value.to_string()),
+        "eapi" => Crypto::eapi(url, value),
+        "weapi" => Crypto::weapi(value),
         "linuxapi" => {
             let data = format!(
                 r#"{{"method":"{}","url":"{}","params":{}}}"#,
                 method,
                 url.replace("weapi", "api"),
-                value.to_string() );
+                value );
             println!("data={}", data);
             Crypto::linuxapi(&data)
         },
-        _ => Crypto::weapi(&value.to_string()),
+        _ => Crypto::weapi(value),
     };
 
     let url = match crypto {
@@ -139,7 +153,7 @@ pub fn create_request<T: ToString>(
         _ => url,
     };
 
-    println!("body={}", body);
+    println!("body={}; url={}", body, url);
 
     let client = ClientBuilder::new()
         .default_headers(headers)
@@ -147,8 +161,10 @@ pub fn create_request<T: ToString>(
         .build()
         .unwrap();
 
+    let body1 = "params=ipR%2Bl0hk7yjH5TuaT%2Fo%2BgA8vVUR4U7OqPYUwnIAgE8tE31Aq82beeZL%2BgVd%2FV9ui&encSecKey=6f4f2d4bb52dc409470fb27bc521794089b6fc36ded27957270be4ad75b70e82dd35c4b627ce07cd19a448a2fecee027210f2bc88886ee97e877a7ee1e6a81e06cd6f38c38fc107173fc4e8f15982a4d3e2cc5fcd7ec00758a5a3ece1d78bd91cf6ec3c05983174fc19dbecbef5dc628c340d90172936532247c64ca20cbe287";
+
     client.post(url)
-        .body(body)
+        .body(body1)
         .send().unwrap()
         .json().unwrap()
 }

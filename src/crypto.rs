@@ -29,6 +29,12 @@ pub enum AesMode {
 }
 
 impl Crypto {
+    pub fn hex_random_bytes(n: usize) -> String {
+        let mut data: Vec<u8> = Vec::with_capacity(n);
+        OsRng.fill_bytes(&mut data);
+        hex::encode(data)
+    }
+
     pub fn eapi(url: &str, text: &str) -> String {
         let message = format!("nobody{}use{}md5forencrypt",
             url, text
@@ -41,6 +47,7 @@ impl Crypto {
             &data,
             &*EAPIKEY,
             ecb,
+            Some(&*IV),
             |t: &Vec<u8>| hex::encode_upper(t)
         );
         println!("params={}", params);
@@ -58,22 +65,27 @@ impl Crypto {
             BASE62[ (i % 62) as usize ]
         }).collect();
 
-        println!("text={}", text);
+        println!("key={:?}", key);
 
         let params = Crypto::aes_encrypt(
             &Crypto::aes_encrypt(
-                text, &*PRESET_KEY, cbc, base64::encode
+                text,
+                &*PRESET_KEY,
+                cbc,
+                Some(&*IV),
+                base64::encode
             ),
             &key,
             cbc,
+            Some(&*IV),
             base64::encode
         );
 
         let enc_sec_key = Crypto::rsa_encrypt(
             std::str::from_utf8(
                 &key.iter().rev().map(|n|*n)
-                    .collect::<Vec<u8>>())
-                .unwrap(),
+                    .collect::<Vec<u8>>()
+                ).unwrap(),
             &*RSA_PUBLIC_KEY
         );
 
@@ -87,7 +99,9 @@ impl Crypto {
         let params = Crypto::aes_encrypt(
             text,
             &*LINUX_API_KEY,
-            ecb, |t:&Vec<u8>| hex::encode(t)
+            ecb,
+            None,
+            |t:&Vec<u8>| hex::encode(t)
         ).to_uppercase();
         println!("text={},prams={}", text, params);
         querystring::stringify(vec![
@@ -96,8 +110,11 @@ impl Crypto {
     }
 
     pub fn aes_encrypt (
-            data: &str, key: &Vec<u8>,
-            mode: AesMode, encode: for<'r> fn(&'r Vec<u8>) -> String
+            data: &str,
+            key: &Vec<u8>,
+            mode: AesMode,
+            iv: Option<&[u8]>,
+            encode: for<'r> fn(&'r Vec<u8>) -> String
         ) -> String {
         let cipher = match mode {
             cbc => Cipher::aes_128_cbc(),
@@ -106,7 +123,7 @@ impl Crypto {
         let cipher_text = encrypt(
             cipher,
             key,
-            Some(&*IV),
+            iv,
             data.as_bytes()
         ).unwrap();
 
@@ -141,31 +158,53 @@ impl Crypto {
 mod tests {
 
     use super::Crypto;
-    use crate::crypto::{PRESET_KEY, RSA_PUBLIC_KEY, HashType, AesMode};
+    use crate::crypto::{
+        IV, PRESET_KEY, RSA_PUBLIC_KEY, HashType, AesMode,
+    };
+    use urlqstring::querystring;
     use base64::CharacterSet::Crypt;
     use openssl::hash::DigestBytes;
+    use rand::seq::index::IndexVec;
 
     #[test]
     fn test_aes_encrypt() {
-        let msg = r#"{"ids":"[347230]","br":999000}"#;
-
+        let msg1 = r#"{"ids":"[347230]","br":999000}"#;
         let key1 = "gLiwKFot44HYFRAy";
-
         let res = Crypto::aes_encrypt(
-            msg,
+            msg1,
             &*PRESET_KEY,
             AesMode::cbc,
+            Some(&*IV),
             base64::encode );
-
         assert_eq!(res, "pgHP1O/hr+IboRMAq6HzpHjyYwNlv1x0G4BBjd1ohdM=");
 
         let res2 = Crypto::aes_encrypt(
             &res,
             &key1.as_bytes().to_vec(),
             AesMode::cbc,
+            Some(&*IV),
             base64::encode );
-
         assert_eq!(res2, "3EC4ojigTl0OgjyYtcd+97P7YKarculWrOxSgNO5clkQftvO1jOvS8aAhK6diyOb");
+
+        let msg2 = r#"{"s":"海阔天空"}"#;
+        let key2 = "05EBdrdgLjgiqaRc";
+        let res = Crypto::aes_encrypt(
+            msg2,
+            &*PRESET_KEY,
+            AesMode::cbc,
+            Some(&*IV),
+            base64::encode
+        );
+        assert_eq!(res, "1CH1yTIZN/TXvOMJWH3yAe+iY8c9VfW36l3IfOm58l0=");
+
+        let res2 = Crypto::aes_encrypt(
+            &res,
+            &key2.as_bytes().to_vec(),
+            AesMode::cbc,
+            Some(&*IV),
+            base64::encode
+        );
+        assert_eq!(res2, "uPCj4YGmXlMcix5LDAGFb0ynzwPFpFet8dZZ6ia8d2mS47OlnguVmNjGDWPJY1G3");
     }
 
     #[test]
@@ -189,6 +228,40 @@ mod tests {
             pw,
             HashType::md5,
             hex::encode ), "afafe22f87fb761d97b8897e00e98fac");
+    }
+
+    #[test]
+    fn test_weapi() {
+        let text = r#"{"s":"海阔天空"}"#;
+        let key: Vec<u8> = "05EBdrdgLjgiqaRc".as_bytes().to_vec();
+
+        let params = Crypto::aes_encrypt(
+            &Crypto::aes_encrypt(
+                text,
+                &*PRESET_KEY,
+                AesMode::cbc,
+                Some(&*IV),
+                base64::encode
+            ),
+            &key,
+            AesMode::cbc,
+            Some(&*IV),
+            base64::encode
+        );
+
+        let enc_sec_key = Crypto::rsa_encrypt(
+            std::str::from_utf8(
+                &key.iter().rev().map(|n|*n)
+                    .collect::<Vec<u8>>()
+            ).unwrap(),
+            &*RSA_PUBLIC_KEY
+        );
+
+        let res = querystring::stringify(vec![
+            ("params", &params),
+            ("encSecKey", &enc_sec_key)
+        ]);
+        println!("res={}", res);
     }
 
     #[test]
