@@ -65,7 +65,8 @@ impl Crypto {
             BASE62[ (i % 62) as usize ]
         }).collect();
 
-        println!("key={:?}", key);
+        println!("key={}", String::from_utf8(key.clone()).unwrap());
+
 
         let params = Crypto::aes_encrypt(
             &Crypto::aes_encrypt(

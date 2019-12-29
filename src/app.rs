@@ -2371,6 +2371,7 @@ fn index_search(req: HttpRequest) -> impl Responder {
              s, rtype, limit, offset
         )
     );
+    println!("info={}", info);
 
     HttpResponse::Ok()
         .content_type(&*CONTENT_TP)
@@ -2467,6 +2468,7 @@ fn index_search_suggest(req: HttpRequest) -> impl Responder {
     let info = querystring::json(
         &format!("s={}", s)
     );
+    println!("info:{}", info);
     HttpResponse::Ok()
         .content_type(&*CONTENT_TP)
         .json(
@@ -2480,7 +2482,212 @@ fn index_search_suggest(req: HttpRequest) -> impl Responder {
         )
 }
 
+#[get("/send/playlist")]
+fn index_send_playlist(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/msg/private/send";
 
+    let query = req.query_string();
+    let id = query.get_value("playlist").unwrap();
+    let msg = query.get_value("msg").unwrap();
+    let userIds = query.get_value("user_ids").unwrap();
+
+    let info = querystring::json(
+        &format!("id={}&type=playlist&msg={}&userIds=[{}]",id,msg,userIds)
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/send/text")]
+fn index_send_text(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/msg/private/send";
+
+    let query = req.query_string();
+    let id = query.get_value("playlist").unwrap();
+    let msg = query.get_value("msg").unwrap();
+    let userIds = query.get_value("user_ids").unwrap();
+
+    let info = querystring::json(
+        &format!("id={}&type=text&msg={}&userIds=[{}]",id,msg,userIds)
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/setting")]
+fn index_setting(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/api/user/setting";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &"{}"
+            )
+        )
+}
+
+#[get("/share/resource")]
+fn index_share_resource(req: HttpRequest) -> impl Responder {
+    let url = "http://music.163.com/weapi/share/friends/resource";
+    let info = querystring::json(req.query_string());
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/simi/artist")]
+fn index_simi_artist(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/discovery/simiArtist";
+    let info = querystring::json(
+        &req.query_string().replace_key("id", "artistid")
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/simi/mv")]
+fn index_simi_mv(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/discovery/simiMV";
+    let info = querystring::json(req.query_string());
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/simi/playlist")]
+fn index_simi_playlist(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/discovery/simiPlaylist";
+    let info = querystring::json(
+        &req.query_string().replace_key("id", "songid")
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/simi/song")]
+fn index_simi_song(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v1/discovery/simiSong";
+    let info = querystring::json(
+        &req.query_string().replace_key("id", "songid")
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/simi/user")]
+fn index_simi_user(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/discovery/simiUser";
+    let info = querystring::json(
+        &req.query_string().replace_key("id", "songid")
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .json(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+}
+
+#[get("/song/detail")]
+fn index_song_detail(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v3/song/detail";
+    let query = req.query_string();
+    let ids: Vec<usize> = query.get_value("ids")
+        .unwrap().split(",").collect::<Vec<usize>>();
+    
+    let info = querystring::json(
+        &format!("c=[{}]&ids=[{}]",
+            ids.iter().map(|id| {
+                format!(r#"{{"id":"{}"}}"#, id)
+            }
+            ).collect(),
+            ids
+        )
+    );
+    println!("info:{}", info);
+    
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
+}
 
 #[get("/song/url")]
 fn index_song_url(req: HttpRequest) -> impl Responder {
@@ -2706,7 +2913,91 @@ fn index_toplist_detail() -> impl Responder {
         )
 }
 
+#[get("/user/audio")]
+fn index_user_audio(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/djradio/get/byuser";
+}
 
+#[get("/user/cloud")]
+fn index_user_cloud(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("user/cloud/del")]
+fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/cloud/detail")]
+fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/dj")]
+fn index_user_dj(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/event")]
+fn index_user_event(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/followeds")]
+fn index_user_followeds(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/follows")]
+fn index_user_follows(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/playlist")]
+fn index_user_playlist(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/record")]
+fn index_user_record(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/subcount")]
+fn index_user_subcount(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/user/update")]
+fn index_user_update(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/video/detail")]
+fn index_video_detail(req: HttpRequest) -> impl Responder {
+    
+    
+}
+
+#[get("/video/group")]
+fn index_video_group(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/video/group/list")]
+fn index_video_group_list(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/video/sub")]
+fn index_video_sub(req: HttpRequest) -> impl Responder {
+    
+}
+
+#[get("/video/url")]
+fn index_video_url(req: HttpRequest) -> impl Responder {
+    
+}
 
 pub fn start_server() {
     dbg!("start_server...");
@@ -2829,8 +3120,17 @@ pub fn start_server() {
             .service(index_search_hot_detail)
             .service(index_search_multimatch)
             .service(index_search_suggest)
+            .service(index_send_playlist)
+            .service(index_send_text)
+            .service(index_setting)
+            .service(index_share_resource)
+            .service(index_simi_artist)
+            .service(index_simi_mv)
+            .service(index_simi_playlist)
+            .service(index_simi_song)
+            .service(index_simi_user)
+            .service(index_song_detail)
             .service(index_song_url)
-
             .service(index_top_album)
             .service(index_top_artists)
             .service(index_top_list)
@@ -2841,8 +3141,24 @@ pub fn start_server() {
             .service(index_toplist)
             .service(index_toplist_artist)
             .service(index_toplist_detail)
-
-
+            .service(index_user_audio)
+            .service(index_user_cloud)
+            .service(index_user_cloud_del)
+            .service(index_user_cloud_detail)
+            .service(index_user_dj)
+            .service(index_user_event)
+            .service(index_user_followeds)
+            .service(index_user_follows)
+            .service(index_user_playlist)
+            .service(index_user_record)
+            .service(index_user_subcount)
+            .service(index_user_update)
+            .service(index_video_detail)
+            .service(index_video_group)
+            .service(index_video_group_list)
+            .service(index_video_sub)
+            .service(index_video_url)
+            .service(index_weblog)
             .route("/", web::get().to(index_root))
     });
 
