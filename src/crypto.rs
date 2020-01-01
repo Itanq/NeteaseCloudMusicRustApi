@@ -67,15 +67,16 @@ impl Crypto {
 
         println!("key={}", String::from_utf8(key.clone()).unwrap());
 
+        let params1 = Crypto::aes_encrypt(
+            text,
+            &*PRESET_KEY,
+            cbc,
+            Some(&*IV),
+            base64::encode
+        );
 
         let params = Crypto::aes_encrypt(
-            &Crypto::aes_encrypt(
-                text,
-                &*PRESET_KEY,
-                cbc,
-                Some(&*IV),
-                base64::encode
-            ),
+            &params1,
             &key,
             cbc,
             Some(&*IV),
@@ -233,22 +234,26 @@ mod tests {
 
     #[test]
     fn test_weapi() {
-        let text = r#"{"s":"海阔天空"}"#;
-        let key: Vec<u8> = "05EBdrdgLjgiqaRc".as_bytes().to_vec();
+        let text = r#"{"ids":"[\"89ADDE33C0AAE8EC14B99F6750DB954D\"]","resolution":"1080"}"#;
+        let key: Vec<u8> = "IJGckGcNzgsdFNZu".as_bytes().to_vec();
+
+        let params1 = Crypto::aes_encrypt(
+            text,
+            &*PRESET_KEY,
+            AesMode::cbc,
+            Some(&*IV),
+            base64::encode
+        );
 
         let params = Crypto::aes_encrypt(
-            &Crypto::aes_encrypt(
-                text,
-                &*PRESET_KEY,
-                AesMode::cbc,
-                Some(&*IV),
-                base64::encode
-            ),
+            &params1,
             &key,
             AesMode::cbc,
             Some(&*IV),
             base64::encode
         );
+
+        println!("params1={}\nparams={}", params1, params);
 
         let enc_sec_key = Crypto::rsa_encrypt(
             std::str::from_utf8(

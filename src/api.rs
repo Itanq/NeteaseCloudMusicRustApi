@@ -153,7 +153,7 @@ pub fn create_request(
         _ => url,
     };
 
-    println!("body={}; url={}", body, url);
+    println!("body={}", body);
 
     let client = ClientBuilder::new()
         .default_headers(headers)
@@ -161,10 +161,8 @@ pub fn create_request(
         .build()
         .unwrap();
 
-    let body1 = "params=ipR%2Bl0hk7yjH5TuaT%2Fo%2BgA8vVUR4U7OqPYUwnIAgE8tE31Aq82beeZL%2BgVd%2FV9ui&encSecKey=6f4f2d4bb52dc409470fb27bc521794089b6fc36ded27957270be4ad75b70e82dd35c4b627ce07cd19a448a2fecee027210f2bc88886ee97e877a7ee1e6a81e06cd6f38c38fc107173fc4e8f15982a4d3e2cc5fcd7ec00758a5a3ece1d78bd91cf6ec3c05983174fc19dbecbef5dc628c340d90172936532247c64ca20cbe287";
-
     client.post(url)
-        .body(body1)
+        .body(body)
         .send().unwrap()
         .json().unwrap()
 }
@@ -177,8 +175,6 @@ fn choose_user_agent(ua: &str) -> &str {
     } else {
         rand::thread_rng().gen_range(0, user_agent_list.len())
     };
-
-    println!("userAgent={}", user_agent_list[index]);
 
     unsafe {
         user_agent_list.get_unchecked(index)

@@ -3308,7 +3308,6 @@ fn index_video_url(req: HttpRequest) -> impl Responder {
 }
 
 pub fn start_server() {
-    dbg!("start_server...");
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(|| {
         App::new()
@@ -3473,6 +3472,7 @@ pub fn start_server() {
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l).unwrap()
     } else {
+        dbg!("server runing @ http://127.0.0.1:8000");
         server.bind("127.0.0.1:8000").unwrap()
     };
 
