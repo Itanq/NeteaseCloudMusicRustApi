@@ -2662,18 +2662,19 @@ fn index_simi_user(req: HttpRequest) -> impl Responder {
 fn index_song_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v3/song/detail";
     let query = req.query_string();
-    let ids: Vec<usize> = query.get_value("ids")
-        .unwrap().split(",").collect::<Vec<usize>>();
-    
-    let info = querystring::json(
-        &format!("c=[{}]&ids=[{}]",
-            ids.iter().map(|id| {
-                format!(r#"{{"id":"{}"}}"#, id)
-            }
-            ).collect(),
-            ids
-        )
-    );
+//    let ids: Vec<usize> = query.get_value("ids")
+//        .unwrap().split(",").collect::<Vec<usize>>();
+//
+//    let info = querystring::json(
+//        &format!("c=[{}]&ids=[]",
+//            ids.iter().map(|id| {
+//                format!(r#"{{"id":"{}"}}"#, id)
+//            }
+//            ).collect(),
+//            //ids
+//        )
+//    );
+    let info = "hello";
     println!("info:{}", info);
     
     HttpResponse::Ok()
@@ -2916,87 +2917,394 @@ fn index_toplist_detail() -> impl Responder {
 #[get("/user/audio")]
 fn index_user_audio(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/byuser";
+    let info = querystring::json(
+        &req.query_string().replace_key("uid", "userId")
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
 }
+
 
 #[get("/user/cloud")]
 fn index_user_cloud(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/v1/cloud/get";
+    let info = querystring::json(
+        req.query_string()
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
 }
 
 #[get("user/cloud/del")]
 fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
-    
+    let url = "http://music.163.com/weapi/cloud/del";
+    let query = req.query_string();
+    let songIds = query.get_value("id").unwrap();
+    let info = query.replace_key("id", "songIds");
+    let info = songIds.deref();
+    let info = querystring::json(
+        &info.replace_value(songIds, &format!("[{}]", songIds))
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
 }
 
 #[get("/user/cloud/detail")]
 fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/v1/cloud/get/byids";
+    let query = req.query_string();
+    let queryValue = query.get_value("id").unwrap();
+
+    let info = serde_json::json!({
+        "songIds": queryValue.split(',').collect::<Vec<&str>>()
+    }).to_string();
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                url,
+                &info
+            )
+        )
 }
+
+#[get("/user/detail")]
+fn index_user_detail(req: HttpRequest) -> impl Responder {
+    let url = format!("https://music.163.com/weapi/v1/user/detail/{}",
+        req.query_string().get_value("uid").unwrap()
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &"{}"
+            )
+        )
+}
+
 
 #[get("/user/dj")]
 fn index_user_dj(req: HttpRequest) -> impl Responder {
-    
+    let query = req.query_string();
+    let url = format!("https://music.163.com/weapi/dj/program/{}",
+        query.get_value("uid").unwrap()
+    );
+
+    let info = serde_json::json!({
+        "limit": query.get_value("limit").unwrap_or("30"),
+        "offset": query.get_value("offset").unwrap_or("0")
+    }).to_string();
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/user/event")]
 fn index_user_event(req: HttpRequest) -> impl Responder {
-    
+    let query = req.query_string();
+    let url = format!("https://music.163.com/weapi/event/get/{}",
+        query.get_value("uid").unwrap()
+    );
+
+    let info = serde_json::json!({
+        "getcounts": "true",
+        "time": query.get_value("lasttime").unwrap_or("-1"),
+        "limit": query.get_value("limit").unwrap_or("30"),
+        "total": "true"
+    }).to_string();
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/user/followeds")]
 fn index_user_followeds(req: HttpRequest) -> impl Responder {
-    
+    let query = req.query_string();
+    let uid = query.get_value("uid").unwrap();
+    let url = format!("https://music.163.com/eapi/user/getfolloweds/{}",
+        uid
+    );
+
+    let info = serde_json::json!({
+        "userId": uid,
+        "time": query.get_value("lasttime").unwrap_or("-1"),
+        "limit": query.get_value("limit").unwrap_or("30")
+    }).to_string();
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/user/follows")]
 fn index_user_follows(req: HttpRequest) -> impl Responder {
-    
+    let query = req.query_string();
+    let url = format!("https://music.163.com/weapi/user/getfollows/{}",
+        query.get_value("uid").unwrap()
+    );
+
+    let info = serde_json::json!({
+        "offset": query.get_value("offset").unwrap_or("0"),
+        "limit": query.get_value("limit").unwrap_or("30"),
+        "order": "true"
+    }).to_string();
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/user/playlist")]
 fn index_user_playlist(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/user/playlist";
+    let info = querystring::json(
+        req.query_string()
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/user/record")]
 fn index_user_record(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/v1/play/record";
+    let info = querystring::json(
+        req.query_string()
+    );
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
+
 }
 
 #[get("/user/subcount")]
 fn index_user_subcount(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/subcount";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &"{}"
+            )
+        )
 }
 
 #[get("/user/update")]
 fn index_user_update(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/user/profile/update";
+    let query = req.query_string();
+    let info = serde_json::json!({
+        "avatarImgId": "0",
+        "birthday": query.get_value("birthday").unwrap(),
+        "city": query.get_value("city").unwrap(),
+        "gender": query.get_value("gender").unwrap(),
+        "nickname": query.get_value("nickname").unwrap(),
+        "province": query.get_value("province").unwrap(),
+        "signature": query.get_value("signature").unwrap()
+    }).to_string();
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/video/detail")]
 fn index_video_detail(req: HttpRequest) -> impl Responder {
-    
-    
+    let url = "https://music.163.com/weapi/cloudvideo/v1/video/detail";
+    let info = querystring::json(req.query_string());
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/video/group")]
 fn index_video_group(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/videotimeline/videogroup/get";
+    let query = req.query_string();
+    let info = serde_json::json!({
+        "groupId": query.get_value("id").unwrap(),
+        "offset": query.get_value("offset").unwrap_or("0"),
+        "needUrl": true,
+        "resolution": query.get_value("res").unwrap_or("1080")
+    }).to_string();
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/video/group/list")]
 fn index_video_group_list(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/api/cloudvideo/group/list";
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &"{}"
+            )
+        )
 }
 
 #[get("/video/sub")]
 fn index_video_sub(req: HttpRequest) -> impl Responder {
-    
+    let query = req.query_string();
+    let url = format!("https://music.163.com/weapi/cloudvideo/video/{}",
+        query.get_value("t").unwrap()
+    );
+    let info = serde_json::json!({
+        "id": query.get_value("id").unwrap()
+    }).to_string();
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 #[get("/video/url")]
 fn index_video_url(req: HttpRequest) -> impl Responder {
-    
+    let url = "https://music.163.com/weapi/cloudvideo/playurl";
+    let query = req.query_string();
+    let info = serde_json::json!({
+        "ids": format!("{:?}",
+            query.get_value("id").unwrap().split(',').collect::<Vec<&str>>()),
+        "resolution": query.get_value("res").unwrap_or("1080")
+    }).to_string();
+
+    println!("info={}", info);
+
+    HttpResponse::Ok()
+        .content_type(&*CONTENT_TP)
+        .body(
+            api::create_request(
+                "POST",
+                "",
+                "weapi",
+                &url,
+                &info
+            )
+        )
 }
 
 pub fn start_server() {
@@ -3145,6 +3453,7 @@ pub fn start_server() {
             .service(index_user_cloud)
             .service(index_user_cloud_del)
             .service(index_user_cloud_detail)
+            .service(index_user_detail)
             .service(index_user_dj)
             .service(index_user_event)
             .service(index_user_followeds)
@@ -3158,7 +3467,6 @@ pub fn start_server() {
             .service(index_video_group_list)
             .service(index_video_sub)
             .service(index_video_url)
-            .service(index_weblog)
             .route("/", web::get().to(index_root))
     });
 
@@ -3169,4 +3477,28 @@ pub fn start_server() {
     };
 
     server.run().unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+
+    use serde_json::Serializer;
+    use serde_json::json;
+    use urlqstring::querystring::QueryParamGet;
+
+    #[test]
+    fn it_works() {
+        let str = "id=5374627,5374628,5374629";
+        let value = str.get_value("id").unwrap();
+        let value: Vec<&str> = value.split(',').collect();
+
+        let s1 = format!("{:?}", value);
+        println!("s1={}", s1);
+
+        let s = json!({
+            "songIds":s1
+        });
+
+        println!("s={}", s);
+    }
 }
