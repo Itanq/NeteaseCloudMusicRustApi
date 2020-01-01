@@ -15,14 +15,12 @@ use urlqstring::{
     querystring,
     querystring::QueryParamGet
 };
-
-use super::api::{
-    SongInfo,
-    EmailLoginInfo,
-    SearchInfo,
+use crate::{
+    api,
+    api::{
+        banner_type, operator, resource_type, topList,
+    }
 };
-use crate::api;
-use crate::api::{CommentInfo, Identify, CellPhoneLoginInfo, MvInfo, TopMvInfo, TopAlbumInfo, TopList, ArtistAlbum, NewSong, DjInfo, Identity, PageIndex, CateId, PlayListDetail, ResourceType, NickName, banner_type, resource_type, operator, create_request, topList};
 use crate::crypto::{
     Crypto, HashType
 };
