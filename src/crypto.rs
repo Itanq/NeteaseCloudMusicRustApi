@@ -5,9 +5,10 @@ use openssl::rsa::{ Rsa, Padding, };
 use openssl::symm::{ encrypt, Cipher, };
 use openssl::hash::{hash, MessageDigest, DigestBytes};
 use rand::RngCore;
-use urlqstring::querystring;
+use urlqstring::QueryParams;
 use crate::crypto::AesMode::{cbc, ecb};
 use lazy_static::lazy_static;
+use std::ops::Deref;
 
 lazy_static!{
     static ref IV: Vec<u8> = "0102030405060708".as_bytes().to_vec();
@@ -51,11 +52,11 @@ impl Crypto {
             |t: &Vec<u8>| hex::encode_upper(t)
         );
         println!("params={}", params);
-        querystring::stringify(
+        QueryParams::from(
             vec![
-                ("params", &params)
+                ("params", params.deref())
             ]
-        )
+        ).stringify()
     }
 
     pub fn weapi(text: &str) -> String {
@@ -91,10 +92,10 @@ impl Crypto {
             &*RSA_PUBLIC_KEY
         );
 
-        querystring::stringify(vec![
-            ("params", &params),
-            ("encSecKey", &enc_sec_key)
-        ])
+        QueryParams::from(vec![
+            ("params", params.deref()),
+            ("encSecKey", enc_sec_key.deref())
+        ]).stringify()
     }
 
     pub fn linuxapi(text: &str) -> String {
@@ -106,9 +107,9 @@ impl Crypto {
             |t:&Vec<u8>| hex::encode(t)
         ).to_uppercase();
         println!("text={},prams={}", text, params);
-        querystring::stringify(vec![
-            ("eparams", &params)
-        ])
+        QueryParams::from(vec![
+            ("eparams", params.deref())
+        ]).stringify()
     }
 
     pub fn aes_encrypt (
@@ -163,7 +164,7 @@ mod tests {
     use crate::crypto::{
         IV, PRESET_KEY, RSA_PUBLIC_KEY, HashType, AesMode,
     };
-    use urlqstring::querystring;
+    use urlqstring::QueryParams;
     use base64::CharacterSet::Crypt;
     use openssl::hash::DigestBytes;
     use rand::seq::index::IndexVec;
@@ -263,7 +264,7 @@ mod tests {
             &*RSA_PUBLIC_KEY
         );
 
-        let res = querystring::stringify(vec![
+        let res = QueryParams::from(vec![
             ("params", &params),
             ("encSecKey", &enc_sec_key)
         ]);
