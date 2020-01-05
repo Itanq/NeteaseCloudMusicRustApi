@@ -2,7 +2,7 @@
 name = "RustMusic"
 version = "0.1.0"
 authors = ["zmant <zmant724@aliyun.com>"]
-license = "MIT"
+license-file = "LICENSE"
 edition = "2018"
 description = "Rust implementation of NeteaseCloud music API."
 
