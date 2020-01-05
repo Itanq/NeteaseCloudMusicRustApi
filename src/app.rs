@@ -31,9 +31,7 @@ use std::ops::Deref;
 use actix_web::error::UrlencodedError::ContentType;
 use base64::CharacterSet::Crypt;
 
-lazy_static!{
-    static ref CONTENT_TP: HeaderValue = HeaderValue::from_static("application/json; charset=utf-8");
-}
+const CONTENT_TP: &'static str = "application/json; charset=utf-8";
 
 fn index_root() -> impl Responder {
     println!("index_root.....");
@@ -45,7 +43,7 @@ fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
     let url = "http://music.163.com/eapi/activate/initProfile";
     let value = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -62,7 +60,7 @@ fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/album/detail/dynamic";
     let value = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -78,7 +76,7 @@ fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
 fn index_album_newest(msg: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/discovery/newAlbum";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -97,7 +95,7 @@ fn index_album_sub(req: HttpRequest ) -> impl Responder {
     let url = format!("https://music.163.com/api/album/{}", id);
     let value = QueryParams::from(query).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -122,7 +120,7 @@ fn index_album_sublist(req: HttpRequest) -> impl Responder {
         &format!("limit={}&offset={}&total={}", limit, offset, total)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -140,7 +138,7 @@ fn index_album(req: HttpRequest) -> impl Responder {
     let id = query.value("id").unwrap_or("32311");
     let url = &format!("https://music.163.com/weapi/v1/album/{}", id);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -166,7 +164,7 @@ fn index_artist_album(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(&value).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -185,7 +183,7 @@ fn index_artist_desc(req: HttpRequest) -> impl Responder {
     let id = query.value("id").unwrap_or("6452");
     let info = QueryParams::from(&format!("id={}", id)).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -215,7 +213,7 @@ fn index_artist_list(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -243,7 +241,7 @@ fn index_artist_mv(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -272,7 +270,7 @@ fn index_artist_sub(req: HttpRequest) -> impl Responder {
     ).json();
     println!("info:{}", info);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -298,7 +296,7 @@ fn index_artist_sublist(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -315,7 +313,7 @@ fn index_artist_top_song(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/artist/top/song";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -333,7 +331,7 @@ fn index_artists(req: HttpRequest) -> impl Responder {
     let id = query.value("id").unwrap_or("6452");
     let url = format!("https://music.163.com/weapi/v1/artist/{}", id);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -355,7 +353,7 @@ fn index_banner(req: HttpRequest) -> impl Responder {
         &format!("clientType={}",_type)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -389,7 +387,7 @@ fn index_captcha_register(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -413,7 +411,7 @@ fn index_captcha_sent(req: HttpRequest) -> impl Responder {
         &format!("ctcode={}&cellphone={}", ctcode, cellphone)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -440,7 +438,7 @@ fn index_captcha_verify(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -464,7 +462,7 @@ fn index_cellphone_existence_check(req: HttpRequest) -> impl Responder {
         &format!("countrycode={}&cellphone={}", countrycode, cellphone)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -489,7 +487,7 @@ fn index_check_music(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -538,7 +536,7 @@ fn index_comment(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(&res).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -561,7 +559,7 @@ fn index_comment_album(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -580,7 +578,7 @@ fn index_comment_dj(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_DJ_1_{}", id);
     let info = QueryParams::from(query).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -600,7 +598,7 @@ fn index_comment_event(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from(query).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -631,7 +629,7 @@ fn index_comment_hot(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -647,7 +645,7 @@ fn index_comment_hot(req: HttpRequest) -> impl Responder {
 fn index_comment_hotwall_list(_req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/comment/hotwall/list/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -677,7 +675,7 @@ fn index_comment_like(req: HttpRequest) -> impl Responder {
         &format!("threadId={}&commentId={}", threadId, commentId)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -697,7 +695,7 @@ fn index_comment_music(req: HttpRequest) ->impl Responder {
 
     let info = QueryParams::from(query).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -718,7 +716,7 @@ fn index_comment_mv(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(query).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -739,7 +737,7 @@ fn index_comment_playlist(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from( query ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -760,7 +758,7 @@ fn index_comment_video(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from( query ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -777,7 +775,7 @@ fn index_daily_signin(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/point/dailyTask";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -803,7 +801,7 @@ fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -819,7 +817,7 @@ fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
 fn index_dj_banner() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/banner/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -835,7 +833,7 @@ fn index_dj_banner() -> impl Responder {
 fn index_dj_category_exclude_hot() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/category/excludehot";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -851,7 +849,7 @@ fn index_dj_category_exclude_hot() -> impl Responder {
 fn index_dj_category_recommend() -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/category/recommend";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -867,7 +865,7 @@ fn index_dj_category_recommend() -> impl Responder {
 fn index_dj_category_list() -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/category/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -884,7 +882,7 @@ fn index_dj_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -901,7 +899,7 @@ fn index_dj_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/hot/v1";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -918,7 +916,7 @@ fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/home/paygift/list?_nmclfl=1";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -935,7 +933,7 @@ fn index_dj_program_details(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/dj/program/detail";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -952,7 +950,7 @@ fn index_dj_program_toplist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/program/toplist/v1";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -969,7 +967,7 @@ fn index_dj_program_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djprogram/toplist/hours";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -998,7 +996,7 @@ fn index_dj_program(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1015,7 +1013,7 @@ fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/hot";
     let info = QueryParams::from( req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1031,7 +1029,7 @@ fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
 fn index_dj_recommend() -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend/v1";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1052,7 +1050,7 @@ fn index_dj_recommend_type(req: HttpRequest) -> impl Responder {
         &format!("cateId={}", cateId)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1078,7 +1076,7 @@ fn index_dj_sub(req: HttpRequest) -> impl Responder {
         &format!("id={}", query.value("rid").unwrap())
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1095,7 +1093,7 @@ fn index_dj_sub_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/subed";
     let info = QueryParams::from( req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1142,7 +1140,7 @@ fn index_dj_toplist(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1159,7 +1157,7 @@ fn index_dj_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/hours";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1176,7 +1174,7 @@ fn index_dj_toplist_newcomer(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/newcomer";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1193,7 +1191,7 @@ fn index_dj_toplist_pay(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/toplist/pay";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1210,7 +1208,7 @@ fn index_dj_toplist_popular(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/popular";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1227,7 +1225,7 @@ fn index_event(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/event/get";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1247,7 +1245,7 @@ fn index_event_del(req: HttpRequest) -> impl Responder {
         &format!("id={}", query.value("evId").unwrap())
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1271,7 +1269,7 @@ fn index_event_forward(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1294,7 +1292,7 @@ fn index_fm_trash(req: HttpRequest) -> impl Responder {
         &format!("songId={}", id)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1317,7 +1315,7 @@ fn index_follow(req: HttpRequest) -> impl Responder {
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/user/{}/{}",t,id);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1334,7 +1332,7 @@ fn index_hot_topic(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/act/hot";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1362,7 +1360,7 @@ fn index_like(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1379,7 +1377,7 @@ fn index_likelist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/like/get";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1410,7 +1408,7 @@ fn index_login(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1442,7 +1440,7 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1458,7 +1456,7 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
 fn index_login_refresh() -> impl Responder {
     let url = "https://music.163.com/weapi/login/token/refresh";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1474,7 +1472,7 @@ fn index_login_refresh() -> impl Responder {
 fn index_login_status(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "GET",
@@ -1490,7 +1488,7 @@ fn index_login_status(req: HttpRequest) -> impl Responder {
 fn index_logout(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/logout";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1507,7 +1505,7 @@ fn index_lyric(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/lyric?lv=-1&kv=-1&tv=-1";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1533,7 +1531,7 @@ fn index_msg_comments(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1550,7 +1548,7 @@ fn index_msg_forwards(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/forwards/get";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1567,7 +1565,7 @@ fn index_msg_notices(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/notices";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1584,7 +1582,7 @@ fn index_msg_private(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/private/users";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1604,7 +1602,7 @@ fn index_msg_private_history(req: HttpRequest) -> impl Responder {
             .replace_key("before", "time")
             .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1639,7 +1637,7 @@ fn index_mv_all(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1658,7 +1656,7 @@ fn index_mv_detail(req: HttpRequest) -> impl Responder {
         .replace_key("mvid", "id")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1675,7 +1673,7 @@ fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/api/mv/exclusive/rcmd";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1693,7 +1691,7 @@ fn index_mv_first(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string()).json();
     println!("info={}", info);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1719,7 +1717,7 @@ fn index_mv_sub(req: HttpRequest) -> impl Responder {
         .replace_value(id, &format!("[{}]", id))
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1736,7 +1734,7 @@ fn index_mv_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/allvideo/sublist";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1761,7 +1759,7 @@ fn index_mv_url(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1777,7 +1775,7 @@ fn index_mv_url(req: HttpRequest) -> impl Responder {
 fn index_personal_fm(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/radio/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1794,7 +1792,7 @@ fn index_personalized(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/playlist";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1810,7 +1808,7 @@ fn index_personalized(req: HttpRequest) -> impl Responder {
 fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/djprogram";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1826,7 +1824,7 @@ fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
 fn index_personalized_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/mv";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1845,7 +1843,7 @@ fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
         &format!("type=recommend")
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1861,7 +1859,7 @@ fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
 fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/privatecontent";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -1877,7 +1875,7 @@ fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
 fn index_playlist_catlist() -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/catalogue";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1894,7 +1892,7 @@ fn index_playlist_create(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/create";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1913,7 +1911,7 @@ fn index_playlist_delete(req: HttpRequest) -> impl Responder {
         .replace_key("id","pid")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1930,7 +1928,7 @@ fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/desc/update";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1954,7 +1952,7 @@ fn index_playlist_detail(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1970,7 +1968,7 @@ fn index_playlist_detail(req: HttpRequest) -> impl Responder {
 fn index_playlist_hot() -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/hottags";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -1987,7 +1985,7 @@ fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/update/name";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2012,7 +2010,7 @@ fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
         &format!("id={}", query.value("id").unwrap())
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2029,7 +2027,7 @@ fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/subscribers";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2047,7 +2045,7 @@ fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/tags/update";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2071,7 +2069,7 @@ fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2102,7 +2100,7 @@ fn index_playlist_update(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2135,7 +2133,7 @@ fn index_playmode_interlligence_list(req: HttpRequest) -> impl Responder {
         )
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2152,7 +2150,7 @@ fn index_program_recommend(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/program/recommend/v1";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2169,7 +2167,7 @@ fn index_rebind(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/replaceCellphone";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2185,7 +2183,7 @@ fn index_rebind(req: HttpRequest) -> impl Responder {
 fn index_recommend_resource(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/recommend/resource";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2204,7 +2202,7 @@ fn index_recommend_songs() -> impl Responder {
         20, 0, true
     );
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2226,7 +2224,7 @@ fn index_register_cellphone(req: HttpRequest) -> impl Responder {
             &Crypto::hash_encrypt(pw, HashType::md5, hex::encode)
         ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2243,7 +2241,7 @@ fn index_related_allvideo(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/allvideo/rcmd";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2261,7 +2259,7 @@ fn index_related_playlist(req: HttpRequest) -> impl Responder {
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/playlist?id={}", id);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2298,7 +2296,7 @@ fn index_resource_like(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2329,7 +2327,7 @@ fn index_scrobble(req: HttpRequest) -> impl Responder {
 
     let info = format!(r#"{{"logs":"{}"}}"#, log_value);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2359,7 +2357,7 @@ fn index_search(req: HttpRequest) -> impl Responder {
     println!("info={}", info);
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2375,7 +2373,7 @@ fn index_search(req: HttpRequest) -> impl Responder {
 fn index_search_default(req: HttpRequest) -> impl Responder{
     let url = "http://interface3.music.163.com/eapi/search/defaultkeyword/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2392,7 +2390,7 @@ fn index_search_hot() -> impl Responder {
     let url = "https://music.163.com/weapi/search/hot";
     let value = r#"{{"type":1111}}"#;
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2408,7 +2406,7 @@ fn index_search_hot() -> impl Responder {
 fn index_search_hot_detail(req: HttpRequest) -> impl Responder{
     let url = "https://music.163.com/weapi/hotsearchlist/get";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2427,7 +2425,7 @@ fn index_search_multimatch(req: HttpRequest) -> impl Responder {
         .replace_key("keywords","s")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2455,7 +2453,7 @@ fn index_search_suggest(req: HttpRequest) -> impl Responder {
     ).json();
     println!("info:{}", info);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2480,7 +2478,7 @@ fn index_send_playlist(req: HttpRequest) -> impl Responder {
         &format!("id={}&type=playlist&msg={}&userIds=[{}]",id,msg,userIds)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2505,7 +2503,7 @@ fn index_send_text(req: HttpRequest) -> impl Responder {
         &format!("id={}&type=text&msg={}&userIds=[{}]",id,msg,userIds)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2521,7 +2519,7 @@ fn index_send_text(req: HttpRequest) -> impl Responder {
 fn index_setting(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/setting";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2538,7 +2536,7 @@ fn index_share_resource(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/share/friends/resource";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2557,7 +2555,7 @@ fn index_simi_artist(req: HttpRequest) -> impl Responder {
         .replace_key("id", "artistid")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2574,7 +2572,7 @@ fn index_simi_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiMV";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2593,7 +2591,7 @@ fn index_simi_playlist(req: HttpRequest) -> impl Responder {
         .replace_key("id", "songid")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2612,7 +2610,7 @@ fn index_simi_song(req: HttpRequest) -> impl Responder {
         .replace_key("id", "songid")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2631,7 +2629,7 @@ fn index_simi_user(req: HttpRequest) -> impl Responder {
         .replace_key("id", "songid")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2663,7 +2661,7 @@ fn index_song_detail(req: HttpRequest) -> impl Responder {
     println!("info:{}", info);
     
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2687,7 +2685,7 @@ fn index_song_url(req: HttpRequest) -> impl Responder {
         &format!("[{}]", ids)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
         api::create_request(
             "POST",
@@ -2716,7 +2714,7 @@ fn index_top_album(req: HttpRequest) -> impl Responder {
     ).json();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
         api::create_request(
             "POST",
@@ -2733,7 +2731,7 @@ fn index_top_artists(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/top";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2754,7 +2752,7 @@ fn index_top_list(req: HttpRequest) -> impl Responder {
         &format!("id={}&n=10000", id)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "Post",
@@ -2771,7 +2769,7 @@ fn index_top_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/mv/toplist";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2788,7 +2786,7 @@ fn index_top_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/list";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2814,7 +2812,7 @@ fn index_top_playlist_highquality(req: HttpRequest) -> impl Responder {
         &format!("cat={}&limit={}&lasttime={}&total={}", cat, limit, lasttime, total)
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .json(
             api::create_request(
                 "POST",
@@ -2834,7 +2832,7 @@ fn index_top_song(req: HttpRequest) -> impl Responder {
     ).json();
     HttpResponse::Ok()
         .content_type(
-            &*CONTENT_TP
+            CONTENT_TP
         )
         .body(
             api::create_request(
@@ -2851,7 +2849,7 @@ fn index_top_song(req: HttpRequest) -> impl Responder {
 fn index_toplist() -> impl Responder {
     let url = "https://music.163.com/weapi/toplist";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2868,7 +2866,7 @@ fn index_toplist_artist() -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/artist";
     let info = format!(r#"{{"type":"1","limit":"100","offset":"0","total":"true"}}"#);
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2884,7 +2882,7 @@ fn index_toplist_artist() -> impl Responder {
 fn index_toplist_detail() -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/detail";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2903,7 +2901,7 @@ fn index_user_audio(req: HttpRequest) -> impl Responder {
         .replace_key("uid", "userId")
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2922,7 +2920,7 @@ fn index_user_cloud(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2943,7 +2941,7 @@ fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
     let info = query.replace_value(songIds, &format!("[{}]", songIds))
         .json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2965,7 +2963,7 @@ fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
         "songIds": queryValue.split(',').collect::<Vec<&str>>()
     }).to_string();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -2983,7 +2981,7 @@ fn index_user_detail(req: HttpRequest) -> impl Responder {
         QueryParams::from(req.query_string()).value("uid").unwrap()
     );
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3009,7 +3007,7 @@ fn index_user_dj(req: HttpRequest) -> impl Responder {
     }).to_string();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3036,7 +3034,7 @@ fn index_user_event(req: HttpRequest) -> impl Responder {
     }).to_string();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3063,7 +3061,7 @@ fn index_user_followeds(req: HttpRequest) -> impl Responder {
     }).to_string();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3089,7 +3087,7 @@ fn index_user_follows(req: HttpRequest) -> impl Responder {
     }).to_string();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3108,7 +3106,7 @@ fn index_user_playlist(req: HttpRequest) -> impl Responder {
         QueryParams::from(req.query_string())
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3127,7 +3125,7 @@ fn index_user_record(req: HttpRequest) -> impl Responder {
         QueryParams::from(req.query_string())
     ).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3144,7 +3142,7 @@ fn index_user_record(req: HttpRequest) -> impl Responder {
 fn index_user_subcount(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/subcount";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3170,7 +3168,7 @@ fn index_user_update(req: HttpRequest) -> impl Responder {
         "signature": query.value("signature").unwrap()
     }).to_string();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3187,7 +3185,7 @@ fn index_video_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/video/detail";
     let info = QueryParams::from(req.query_string()).json();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3210,7 +3208,7 @@ fn index_video_group(req: HttpRequest) -> impl Responder {
         "resolution": query.value("res").unwrap_or("1080")
     }).to_string();
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3226,7 +3224,7 @@ fn index_video_group(req: HttpRequest) -> impl Responder {
 fn index_video_group_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/cloudvideo/group/list";
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3249,7 +3247,7 @@ fn index_video_sub(req: HttpRequest) -> impl Responder {
     }).to_string();
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
@@ -3274,7 +3272,7 @@ fn index_video_url(req: HttpRequest) -> impl Responder {
     println!("info={}", info);
 
     HttpResponse::Ok()
-        .content_type(&*CONTENT_TP)
+        .content_type(CONTENT_TP)
         .body(
             api::create_request(
                 "POST",
