@@ -1,7 +1,7 @@
 use actix_web::{
     App, HttpRequest, FromRequest, HttpResponse,
     HttpServer, Responder, web, error,
-    cookie,
+    cookie::Cookie,
 };
 use actix_web::http::{ Uri, };
 use reqwest::header::{HOST, CONTENT_TYPE, USER_AGENT, REFERER, HeaderMap, ToStrError, CONTENT_ENCODING, COOKIE};
@@ -10,13 +10,16 @@ use reqwest::blocking::{
     Client,
 };
 use serde::Deserialize;
+use urlqstring::QueryParams;
 
 use super::crypto::Crypto;
 use actix_web::error::UrlencodedError::ContentType;
 use crate::crypto::HashType;
 use base64::CharacterSet::Crypt;
-use rand::rngs::OsRng;
-use rand::Rng;
+use rand::{ thread_rng, Rng };
+use std::cell::Ref;
+use actix_web::http::header::Date;
+use std::time::SystemTime;
 
 pub const banner_type: [&str; 4] = [
     "pc", "android", "iphone", "ipad"
@@ -95,14 +98,50 @@ pub const topList: [&str; 37] = [
     "3001890046", //云音乐ACG VOCALOID榜
 ];
 
+pub struct RequestParams<'a>
+{
+    pub ua: &'a str,
+    pub crypto: &'a str,
+    pub cookies: Option<Ref<'a, Vec<Cookie<'a>>>>,
+    pub url: Option<&'a str>,
+}
+
+trait CookiesExtensionMethods {
+    fn get_cookies_value(&self, key: &str) -> &str;
+    fn get_cookies_value_or(&self, key: &str) -> Option<&str>;
+}
+
+impl<'a> CookiesExtensionMethods for Vec<Cookie<'a>> {
+    fn get_cookies_value(&self, key: &str) -> &str {
+        self.iter().find_map(|val|{
+            if val.name() == key {
+                return Some(val.value());
+            } else {
+                return None;
+            }
+        }).unwrap_or("")
+    }
+
+    fn get_cookies_value_or(&self, key: &str) -> Option<&str> {
+        let val = self.get_cookies_value(key);
+        if val.is_empty() {
+            return None;
+        } else {
+            return Some(val);
+        }
+    }
+}
 
 pub fn create_request(
     method: &str,
-    ua: &str,
-    crypto: &str,
     url: &str,
-    value: &str
+    value: &QueryParams,
+    params: &RequestParams
     ) -> serde_json::Value {
+
+    let cookies = params.cookies.as_ref().unwrap();
+    let crypto = params.crypto;
+    let ua = params.ua;
 
     let mut headers = HeaderMap::new();
 
@@ -120,30 +159,88 @@ pub fn create_request(
         CONTENT_ENCODING,
         "utf-8".parse().unwrap()
     );
-
-    let _ = match crypto {
-        "linuxapi" => headers.insert(
-                USER_AGENT,
-                linux_user_agent.parse().unwrap() ),
-        _ => headers.insert(
-            USER_AGENT,
-            choose_user_agent(ua).parse().unwrap() )
-    };
-
+    headers.insert(
+        USER_AGENT,
+        choose_user_agent(ua).parse().unwrap()
+    );
 
     let body = match crypto {
-        "eapi" => Crypto::eapi(url, value),
-        "weapi" => Crypto::weapi(value),
+        "eapi" => {
+            let csrf_token = cookies.get_cookies_value("__csrf");
+            let osver = cookies.get_cookies_value("osver");
+            let deviceId = cookies.get_cookies_value("deviceId");
+            let versioncode = cookies.get_cookies_value_or("versioncode")
+                .unwrap_or("140");
+            let mobilename = cookies.get_cookies_value("mobilename");
+            let _date = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_millis().to_string();
+            let buildver = cookies.get_cookies_value_or("buildver").unwrap_or(&_date);
+            let resolution = cookies.get_cookies_value_or("resolution")
+                .unwrap_or("1920x1080");
+            let os = cookies.get_cookies_value_or("os").unwrap_or("android");
+            let channel = cookies.get_cookies_value("channel");
+            let rng = thread_rng().gen_range(0, 1000);
+            let id = format!("{:04}", rng);
+            let requestId = &format!("{}_{}",
+                SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap().as_millis(), id
+            );
+
+            let value = value.clone();
+            let value = value.add_query_string("osver", osver)
+                .add_query_string("deviceId", deviceId)
+                .add_query_string("versioncode", versioncode)
+                .add_query_string("mobilename", mobilename)
+                .add_query_string("buildver", buildver)
+                .add_query_string("resolution", resolution)
+                .add_query_string("os", os)
+                .add_query_string("channel", channel)
+                .add_query_string("requestId", requestId);
+            let value = if let Some(val) = cookies.get_cookies_value_or("MUSIC_U") {
+                value.add_query_string("MUSIC_U", val)
+            } else if let Some(val) = cookies.get_cookies_value_or("MUSIC_A") {
+                value.add_query_string("MUSIC_A", val)
+            } else {
+                value
+            };
+
+            Crypto::eapi(params.url.unwrap(), &value.json())
+        },
+        "weapi" => {
+            let csrf_token = cookies.iter().find_map(|val|{
+                if val.name() == "__csrf" {
+                    return Some(val.value());
+                } else {
+                    return None;
+                }
+            }).unwrap_or("");
+
+            println!("csrf_token: {}", csrf_token);
+
+            let value = if !csrf_token.is_empty() {
+                value.clone().add_query_string("csrf_token", csrf_token)
+                    .json()
+            } else {
+                value.json()
+            };
+            Crypto::weapi(&value)
+        },
+
         "linuxapi" => {
+            headers.insert(
+                USER_AGENT,
+                linux_user_agent.parse().unwrap()
+            );
             let data = format!(
                 r#"{{"method":"{}","url":"{}","params":{}}}"#,
                 method,
                 url.replace("weapi", "api"),
-                value );
+                &value.json() );
             println!("data={}", data);
             Crypto::linuxapi(&data)
         },
-        _ => Crypto::weapi(value),
+        _ => Crypto::weapi(&value.json()),
     };
 
     let url = match crypto {
