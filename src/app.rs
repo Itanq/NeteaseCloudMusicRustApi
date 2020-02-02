@@ -428,7 +428,7 @@ fn index_banner(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None,
     };
@@ -887,7 +887,7 @@ fn index_comment_playlist(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_PL_0_{}", rid);
 
     let info = QueryParams::from( query );
-    
+
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
@@ -1082,7 +1082,7 @@ fn index_dj_category_list(req: HttpRequest) -> impl Responder {
 fn index_dj_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get";
     let info = QueryParams::from(req.query_string());
-    
+
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
@@ -1106,7 +1106,7 @@ fn index_dj_detail(req: HttpRequest) -> impl Responder {
 fn index_dj_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/hot/v1";
     let info = QueryParams::from(req.query_string());
-    
+
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
@@ -1154,7 +1154,7 @@ fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
 fn index_dj_program_details(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/dj/program/detail";
     let info = QueryParams::from(req.query_string());
-    
+
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
@@ -1416,7 +1416,7 @@ fn index_dj_toplist(req: HttpRequest) -> impl Responder {
     } else {
         1
     };
-   
+
     let t = &format!("limit={}&offset={}&type={}",
         limit, offset, rtype
     );
@@ -1908,7 +1908,7 @@ fn index_lyric(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2457,7 +2457,7 @@ fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2485,7 +2485,7 @@ fn index_playlist_detail(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2531,7 +2531,7 @@ fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2584,7 +2584,7 @@ fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2608,7 +2608,7 @@ fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -2637,7 +2637,7 @@ fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -3014,7 +3014,7 @@ fn index_search_default(req: HttpRequest) -> impl Responder{
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "eapi",
         cookies: Some(cookies),
         url: None
     };
@@ -3397,19 +3397,26 @@ fn index_song_detail(req: HttpRequest) -> impl Responder {
 #[get("/song/url")]
 fn index_song_url(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/song/enhance/player/url";
-    let query = QueryParams::from(req.query_string())
+    let mut query = QueryParams::from(req.query_string())
         .replace_key("id", "ids");
-    let br = query.value("br").unwrap_or("&br=999000");
+    println!("query={}", req.query_string());
+    if query.value("br") == None {
+        println!("add query string: br:999000");
+        query = query.add_query_string("br", "999000");
+    } else {
+        println!("query string br is already added");
+    }
     let ids = query.value("ids").unwrap();
     let t = &format!("[{}]", ids);
     let info = query.replace_value(
         ids,
         t
     );
+    println!("info={:?}; query={:?}", info, query);
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None
     };
@@ -3490,7 +3497,7 @@ fn index_top_list(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None
     };
@@ -3662,7 +3669,7 @@ fn index_toplist_detail(req: HttpRequest) -> impl Responder {
     let cookies = req.cookies().unwrap();
     let params = RequestParams {
         ua: "",
-        crypto: "weapi",
+        crypto: "linuxapi",
         cookies: Some(cookies),
         url: None
     };
@@ -4334,8 +4341,8 @@ pub fn start_server() {
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l).unwrap()
     } else {
-        dbg!("server runing @ http://127.0.0.1:8000");
-        server.bind("127.0.0.1:8000").unwrap()
+        dbg!("server runing @ http://127.0.0.1:3000");
+        server.bind("127.0.0.1:3000").unwrap()
     };
 
     server.run().unwrap();
