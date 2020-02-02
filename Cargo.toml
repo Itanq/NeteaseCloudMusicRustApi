@@ -1,6 +1,6 @@
 [package]
 name = "NeteaseCloudMusicRustApi"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["zmant <zmant724@aliyun.com>"]
 license-file = "LICENSE"
 edition = "2018"
