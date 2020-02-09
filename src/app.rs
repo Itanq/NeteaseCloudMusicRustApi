@@ -12,7 +12,7 @@ use crate::{
     api,
     api::{
         banner_type, operator, resource_type, topList,
-        CookiesExtensionMethods,
+        ToStringExtensionMethods,
         ToHashMap,
     }
 };
