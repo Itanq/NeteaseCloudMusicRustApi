@@ -12,6 +12,8 @@ use crate::{
     api,
     api::{
         banner_type, operator, resource_type, topList,
+        CookiesExtensionMethods,
+        ToHashMap,
     }
 };
 use crate::crypto::{
@@ -40,10 +42,11 @@ fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
     let url = "http://music.163.com/eapi/activate/initProfile";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -63,10 +66,11 @@ fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/album/detail/dynamic";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -86,10 +90,11 @@ fn index_album_newest(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/discovery/newAlbum";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -111,10 +116,11 @@ fn index_album_sub(req: HttpRequest ) -> impl Responder {
     let url = format!("https://music.163.com/api/album/{}", id);
     let info = QueryParams::from(query);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -141,10 +147,11 @@ fn index_album_sublist(req: HttpRequest) -> impl Responder {
     let t = &format!("limit={}&offset={}&total={}", limit, offset, total);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -166,10 +173,11 @@ fn index_album(req: HttpRequest) -> impl Responder {
     let url = &format!("https://music.163.com/weapi/v1/album/{}", id);
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -197,10 +205,11 @@ fn index_artist_album(req: HttpRequest) -> impl Responder {
     let value = format!("limit={}&offset={}&total={}", limit,offset,total);
     let info = QueryParams::from(&value);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -223,10 +232,11 @@ fn index_artist_desc(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}", id);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -256,10 +266,11 @@ fn index_artist_list(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -288,10 +299,11 @@ fn index_artist_mv(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -321,10 +333,11 @@ fn index_artist_sub(req: HttpRequest) -> impl Responder {
     let t = &format!("artistId={}&artistIds=[{}]", artistId, artistId);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -351,10 +364,11 @@ fn index_artist_sublist(req: HttpRequest) -> impl Responder {
     let t = &format!("limit={}&offset={}&total={}", limit, offset, total);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -374,10 +388,11 @@ fn index_artist_top_song(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/artist/top/song";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -399,10 +414,11 @@ fn index_artists(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/weapi/v1/artist/{}", id);
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -426,10 +442,11 @@ fn index_banner(req: HttpRequest) -> impl Responder {
     let t = &format!("clientType={}",_type);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -465,10 +482,11 @@ fn index_captcha_register(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -494,10 +512,11 @@ fn index_captcha_sent(req: HttpRequest) -> impl Responder {
     let t = &format!("ctcode={}&cellphone={}", ctcode, cellphone);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -525,10 +544,11 @@ fn index_captcha_verify(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -554,10 +574,11 @@ fn index_cellphone_existence_check(req: HttpRequest) -> impl Responder {
     let t = &format!("countrycode={}&cellphone={}", countrycode, cellphone);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -583,10 +604,11 @@ fn index_check_music(req: HttpRequest) -> impl Responder {
     let t = &format!("ids={}&br={}", ids, br);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -637,10 +659,11 @@ fn index_comment(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from(&res);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -664,10 +687,11 @@ fn index_comment_album(req: HttpRequest) -> impl Responder {
     let t = &format!("rid={}", id);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -690,10 +714,11 @@ fn index_comment_dj(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(query);
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -716,10 +741,11 @@ fn index_comment_event(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from(query);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -751,10 +777,11 @@ fn index_comment_hot(req: HttpRequest) -> impl Responder {
        );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -775,10 +802,11 @@ fn index_comment_hotwall_list(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -810,10 +838,11 @@ fn index_comment_like(req: HttpRequest) -> impl Responder {
     let t = &format!("threadId={}&commentId={}", threadId, commentId);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -836,10 +865,11 @@ fn index_comment_music(req: HttpRequest) ->impl Responder {
 
     let info = QueryParams::from(query);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -862,10 +892,11 @@ fn index_comment_mv(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from(query);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -889,10 +920,11 @@ fn index_comment_playlist(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from( query );
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -915,10 +947,11 @@ fn index_comment_video(req: HttpRequest) -> impl Responder {
 
     let info = QueryParams::from( query );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -939,10 +972,11 @@ fn index_daily_signin(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string());
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -968,10 +1002,11 @@ fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
     let t = &format!("limit={}&offset={}&total={}",limit,offset,total);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -991,10 +1026,11 @@ fn index_dj_banner(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/banner/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1014,10 +1050,11 @@ fn index_dj_category_exclude_hot(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/category/excludehot";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1037,10 +1074,11 @@ fn index_dj_category_recommend(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/category/recommend";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1060,10 +1098,11 @@ fn index_dj_category_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/category/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1084,10 +1123,11 @@ fn index_dj_detail(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string());
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1108,10 +1148,11 @@ fn index_dj_hot(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string());
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1132,10 +1173,11 @@ fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string());
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1156,10 +1198,11 @@ fn index_dj_program_details(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string());
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1179,10 +1222,11 @@ fn index_dj_program_toplist(req: HttpRequest) -> impl Responder {
    let url = "https://music.163.com/api/program/toplist/v1";
    let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1202,10 +1246,11 @@ fn index_dj_program_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djprogram/toplist/hours";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1234,10 +1279,11 @@ fn index_dj_program(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1257,10 +1303,11 @@ fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/hot";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1280,10 +1327,11 @@ fn index_dj_recommend(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend/v1";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1306,10 +1354,11 @@ fn index_dj_recommend_type(req: HttpRequest) -> impl Responder {
     let t = &format!("cateId={}", cateId);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
     HttpResponse::Ok()
@@ -1337,10 +1386,11 @@ fn index_dj_sub(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}", query.value("rid").unwrap());
     let info = QueryParams::from( t );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1361,10 +1411,11 @@ fn index_dj_sub_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/subed";
     let info = QueryParams::from( req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1385,10 +1436,11 @@ fn index_dj_today_perfered(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/today/perfered";
     let info = QueryParams::from( req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1422,10 +1474,11 @@ fn index_dj_toplist(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from( t );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1446,10 +1499,11 @@ fn index_dj_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/hours";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1470,10 +1524,11 @@ fn index_dj_toplist_newcomer(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/newcomer";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1494,10 +1549,11 @@ fn index_dj_toplist_pay(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/toplist/pay";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None,
     };
 
@@ -1518,10 +1574,11 @@ fn index_dj_toplist_popular(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/popular";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1542,10 +1599,11 @@ fn index_event(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/event/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1568,10 +1626,11 @@ fn index_event_del(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}", query.value("evId").unwrap());
     let info = QueryParams::from( t );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1598,10 +1657,11 @@ fn index_event_forward(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from( t );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1627,10 +1687,11 @@ fn index_fm_trash(req: HttpRequest) -> impl Responder {
     let t = &format!("songId={}", id);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1658,10 +1719,11 @@ fn index_follow(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/weapi/user/{}/{}",t,id);
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     let info = QueryParams::from("");
@@ -1683,10 +1745,11 @@ fn index_hot_topic(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/act/hot";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1717,10 +1780,11 @@ fn index_like(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1741,10 +1805,11 @@ fn index_likelist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/like/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1776,10 +1841,11 @@ fn index_login(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1809,6 +1875,7 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     let rememberLogin = query.value("rememberLogin").unwrap_or("true");
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
 
     let p =format!("phone={}&countrycode={}&password={}&rememberLogin={}",
                    phone, countrycode, password, rememberLogin
@@ -1818,7 +1885,7 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1838,10 +1905,11 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
 fn index_login_refresh(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/login/token/refresh";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -1861,10 +1929,11 @@ fn index_login_refresh(req: HttpRequest) -> impl Responder {
 fn index_login_status(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -1883,10 +1952,11 @@ fn index_login_status(req: HttpRequest) -> impl Responder {
 fn index_logout(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/logout";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -1906,10 +1976,11 @@ fn index_lyric(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/lyric?lv=-1&kv=-1&tv=-1";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -1937,10 +2008,11 @@ fn index_msg_comments(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -1960,10 +2032,11 @@ fn index_msg_forwards(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/forwards/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -1983,10 +2056,11 @@ fn index_msg_notices(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/notices";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2006,10 +2080,11 @@ fn index_msg_private(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/private/users";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2031,10 +2106,11 @@ fn index_msg_private_history(req: HttpRequest) -> impl Responder {
             .replace_key("uid", "userId")
             .replace_key("before", "time");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2069,10 +2145,11 @@ fn index_mv_all(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2093,10 +2170,11 @@ fn index_mv_detail(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("mvid", "id");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2116,10 +2194,11 @@ fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/api/mv/exclusive/rcmd";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2139,10 +2218,11 @@ fn index_mv_first(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/weapi/mv/first";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2171,10 +2251,11 @@ fn index_mv_sub(req: HttpRequest) -> impl Responder {
     let info = query.replace_key("mvid", "mvIds")
         .replace_value(id, t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2194,10 +2275,11 @@ fn index_mv_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/allvideo/sublist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2223,10 +2305,11 @@ fn index_mv_url(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}&r={}", id, r);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2245,10 +2328,11 @@ fn index_mv_url(req: HttpRequest) -> impl Responder {
 fn index_personal_fm(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/radio/get";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
 
@@ -2269,10 +2353,11 @@ fn index_personalized(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/playlist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2292,10 +2377,11 @@ fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/djprogram";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2315,10 +2401,11 @@ fn index_personalized_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/mv";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2339,10 +2426,11 @@ fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
     let t = &format!("type=recommend");
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2362,10 +2450,11 @@ fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/privatecontent";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2385,10 +2474,11 @@ fn index_playlist_catlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/catalogue";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2408,10 +2498,11 @@ fn index_playlist_create(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/create";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2432,10 +2523,11 @@ fn index_playlist_delete(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("id","pid");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2455,10 +2547,11 @@ fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/desc/update";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2483,10 +2576,11 @@ fn index_playlist_detail(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}&n=100000&s={}", id, s);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2506,10 +2600,11 @@ fn index_playlist_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/hottags";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2529,10 +2624,11 @@ fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/update/name";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2559,10 +2655,11 @@ fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}", query.value("id").unwrap());
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2582,10 +2679,11 @@ fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/subscribers";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2606,10 +2704,11 @@ fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/tags/update";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2635,10 +2734,11 @@ fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2671,10 +2771,11 @@ fn index_playlist_update(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2708,10 +2809,11 @@ fn index_playmode_interlligence_list(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2731,10 +2833,11 @@ fn index_program_recommend(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/program/recommend/v1";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2754,10 +2857,11 @@ fn index_rebind(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/replaceCellphone";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2776,11 +2880,13 @@ fn index_rebind(req: HttpRequest) -> impl Responder {
 fn index_recommend_resource(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/recommend/resource";
     let info = QueryParams::from("");
+    println!("info={:?}", info);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2798,13 +2904,16 @@ fn index_recommend_resource(req: HttpRequest) -> impl Responder {
 #[get("/recommend/songs")]
 fn index_recommend_songs(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/recommend/songs";
-    let t = &format!("limit={}&offset={}&total={}", 20, 0, true );
+    let t = &format!("total={}", true );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
+    println!("cookie={:?}", cookies);
+    println!("headers={:?}", req.headers());
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2830,10 +2939,11 @@ fn index_register_cellphone(req: HttpRequest) -> impl Responder {
         t
     );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2853,10 +2963,11 @@ fn index_related_allvideo(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/allvideo/rcmd";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2878,10 +2989,11 @@ fn index_related_playlist(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/playlist?id={}", id);
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2919,10 +3031,11 @@ fn index_resource_like(req: HttpRequest) -> impl Responder {
     let t = &format!("threadId={}", threadId);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2957,10 +3070,11 @@ fn index_scrobble(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(t);
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -2989,10 +3103,11 @@ fn index_search(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3012,10 +3127,11 @@ fn index_search_default(req: HttpRequest) -> impl Responder{
     let url = "http://interface3.music.163.com/eapi/search/defaultkeyword/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3035,10 +3151,11 @@ fn index_search_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/search/hot";
     let value = QueryParams::from("type=1111");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     let info = QueryParams::from("");
@@ -3059,10 +3176,11 @@ fn index_search_hot_detail(req: HttpRequest) -> impl Responder{
     let url = "https://music.163.com/weapi/hotsearchlist/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3083,10 +3201,11 @@ fn index_search_multimatch(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("keywords","s");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3115,10 +3234,11 @@ fn index_search_suggest(req: HttpRequest) -> impl Responder {
     let t = &format!("s={}", s);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3145,10 +3265,11 @@ fn index_send_playlist(req: HttpRequest) -> impl Responder {
     let t= &format!("id={}&type=playlist&msg={}&userIds=[{}]",id,msg,userIds);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3175,10 +3296,11 @@ fn index_send_text(req: HttpRequest) -> impl Responder {
     let t = &format!("id={}&type=text&msg={}&userIds=[{}]",id,msg,userIds);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3198,10 +3320,11 @@ fn index_setting(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/setting";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3221,10 +3344,11 @@ fn index_share_resource(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/share/friends/resource";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3245,10 +3369,11 @@ fn index_simi_artist(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "artistid");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3268,10 +3393,11 @@ fn index_simi_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiMV";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3292,10 +3418,11 @@ fn index_simi_playlist(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3316,10 +3443,11 @@ fn index_simi_song(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3340,10 +3468,11 @@ fn index_simi_user(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3376,10 +3505,11 @@ fn index_song_detail(req: HttpRequest) -> impl Responder {
 //    );
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3414,10 +3544,11 @@ fn index_song_url(req: HttpRequest) -> impl Responder {
     );
     println!("info={:?}; query={:?}", info, query);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3446,10 +3577,11 @@ fn index_top_album(req: HttpRequest) -> impl Responder {
         );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3469,10 +3601,11 @@ fn index_top_artists(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/top";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3495,10 +3628,11 @@ fn index_top_list(req: HttpRequest) -> impl Responder {
     let t= &format!("id={}&n=10000", id);
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3518,10 +3652,11 @@ fn index_top_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/mv/toplist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3541,10 +3676,11 @@ fn index_top_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/list";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3573,10 +3709,11 @@ fn index_top_playlist_highquality(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(t);
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3597,10 +3734,11 @@ fn index_top_song(req: HttpRequest) -> impl Responder {
     let t = &format!("areaId={}&total=true", QueryParams::from(req.query_string()).value("type").unwrap_or("0"));
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3620,10 +3758,11 @@ fn index_toplist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3644,10 +3783,11 @@ fn index_toplist_artist(req: HttpRequest) -> impl Responder {
     let t = &format!("type=1&limit=100&offset=0&total=true");
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3667,10 +3807,11 @@ fn index_toplist_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/detail";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3691,10 +3832,11 @@ fn index_user_audio(req: HttpRequest) -> impl Responder {
     let info = QueryParams::from(req.query_string())
         .replace_key("uid", "userId");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3715,10 +3857,11 @@ fn index_user_cloud(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/cloud/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3742,10 +3885,11 @@ fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
     let t = &format!("[{}]", songIds);
     let info = query.replace_value(songIds, t);
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3770,10 +3914,11 @@ fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
         "songIds": queryValue.split(',').collect::<Vec<&str>>()
     });
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3795,10 +3940,11 @@ fn index_user_detail(req: HttpRequest) -> impl Responder {
     );
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3827,10 +3973,11 @@ fn index_user_dj(req: HttpRequest) -> impl Responder {
     });
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3860,10 +4007,11 @@ fn index_user_event(req: HttpRequest) -> impl Responder {
     });
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3893,10 +4041,11 @@ fn index_user_followeds(req: HttpRequest) -> impl Responder {
     });
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3924,10 +4073,11 @@ fn index_user_follows(req: HttpRequest) -> impl Responder {
         "order": "true"
     });
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3949,10 +4099,11 @@ fn index_user_playlist(req: HttpRequest) -> impl Responder {
         QueryParams::from(req.query_string())
     );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3974,10 +4125,11 @@ fn index_user_record(req: HttpRequest) -> impl Responder {
         QueryParams::from(req.query_string())
     );
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -3996,10 +4148,11 @@ fn index_user_record(req: HttpRequest) -> impl Responder {
 fn index_user_subcount(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/subcount";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4028,10 +4181,11 @@ fn index_user_update(req: HttpRequest) -> impl Responder {
         "signature": query.value("signature").unwrap()
     });
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4051,10 +4205,11 @@ fn index_video_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/video/detail";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4080,10 +4235,11 @@ fn index_video_group(req: HttpRequest) -> impl Responder {
         "resolution": query.value("res").unwrap_or("1080")
     });
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4102,10 +4258,11 @@ fn index_video_group(req: HttpRequest) -> impl Responder {
 fn index_video_group_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/cloudvideo/group/list";
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4130,10 +4287,11 @@ fn index_video_sub(req: HttpRequest) -> impl Responder {
         "id" : query.value("id").unwrap()
     });
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()
@@ -4158,10 +4316,11 @@ fn index_video_url(req: HttpRequest) -> impl Responder {
     });
 
     let cookies = req.cookies().unwrap();
+    let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: Some(cookies),
+        cookies: cookies,
         url: None
     };
     HttpResponse::Ok()

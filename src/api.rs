@@ -20,6 +20,7 @@ use rand::{ thread_rng, Rng };
 use std::cell::Ref;
 use actix_web::http::header::Date;
 use std::time::SystemTime;
+use std::collections::HashMap;
 
 pub const banner_type: [&str; 4] = [
     "pc", "android", "iphone", "ipad"
@@ -102,16 +103,47 @@ pub struct RequestParams<'a>
 {
     pub ua: &'a str,
     pub crypto: &'a str,
-    pub cookies: Option<Ref<'a, Vec<Cookie<'a>>>>,
+    pub cookies: HashMap<&'a str,&'a str>,
     pub url: Option<&'a str>,
 }
 
-trait CookiesExtensionMethods {
+pub(crate) trait ToHashMap<'a> {
+    fn to_hashmap(&self) -> HashMap<&str, &str>;
+}
+
+impl<'a> ToHashMap<'a> for Vec<Cookie<'a>> {
+    fn to_hashmap(&self) -> HashMap<&str, &str> {
+        self.iter().fold(HashMap::new(), |mut acc, v| {
+            acc.insert(v.name(), v.value());
+            acc
+        })
+    }
+}
+
+trait HashMapExtensionMethods {
+    fn to_string(&self) -> String;
+}
+
+impl HashMapExtensionMethods for HashMap<&str,&str> {
+    fn to_string(&self) -> String {
+        self.iter().fold(String::from(""), |acc, (key, value)| {
+            acc + key + "=" + value + ";"
+        })
+    }
+}
+
+pub trait CookiesExtensionMethods {
+    fn to_string(&self) -> String;
     fn get_cookies_value(&self, key: &str) -> &str;
     fn get_cookies_value_or(&self, key: &str) -> Option<&str>;
 }
 
 impl<'a> CookiesExtensionMethods for Vec<Cookie<'a>> {
+
+    fn to_string(&self) -> String {
+        self.iter().fold(String::from(""), |acc, v| { acc + &v.to_string() + ";" } )
+    }
+
     fn get_cookies_value(&self, key: &str) -> &str {
         self.iter().find_map(|val|{
             if val.name() == key {
@@ -139,7 +171,7 @@ pub fn create_request(
     params: &RequestParams
     ) -> serde_json::Value {
 
-    let cookies = params.cookies.as_ref().unwrap();
+    let cookies = &params.cookies;
     let crypto = params.crypto;
     let ua = params.ua;
 
@@ -163,58 +195,61 @@ pub fn create_request(
         USER_AGENT,
         choose_user_agent(ua).parse().unwrap()
     );
+    headers.insert(COOKIE, cookies.to_string().parse().unwrap());
 
     let body = match crypto {
-        "eapi" => {
-            let csrf_token = cookies.get_cookies_value("__csrf");
-            let osver = cookies.get_cookies_value("osver");
-            let deviceId = cookies.get_cookies_value("deviceId");
-            let versioncode = cookies.get_cookies_value_or("versioncode")
-                .unwrap_or("140");
-            let mobilename = cookies.get_cookies_value("mobilename");
-            let _date = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_millis().to_string();
-            let buildver = cookies.get_cookies_value_or("buildver").unwrap_or(&_date);
-            let resolution = cookies.get_cookies_value_or("resolution")
-                .unwrap_or("1920x1080");
-            let os = cookies.get_cookies_value_or("os").unwrap_or("android");
-            let channel = cookies.get_cookies_value("channel");
-            let rng = thread_rng().gen_range(0, 1000);
-            let id = format!("{:04}", rng);
-            let requestId = &format!("{}_{}",
-                SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap().as_millis(), id
-            );
+        // "eapi" => {
+        //     let csrf_token = cookies.get_cookies_value("__csrf");
+        //     let osver = cookies.get_cookies_value("osver");
+        //     let deviceId = cookies.get_cookies_value("deviceId");
+        //     let versioncode = cookies.get_cookies_value_or("versioncode")
+        //         .unwrap_or("140");
+        //     let mobilename = cookies.get_cookies_value("mobilename");
+        //     let _date = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+        //         .unwrap()
+        //         .as_millis().to_string();
+        //     let buildver = cookies.get_cookies_value_or("buildver").unwrap_or(&_date);
+        //     let resolution = cookies.get_cookies_value_or("resolution")
+        //         .unwrap_or("1920x1080");
+        //     let os = cookies.get_cookies_value_or("os").unwrap_or("android");
+        //     let channel = cookies.get_cookies_value("channel");
+        //     let rng = thread_rng().gen_range(0, 1000);
+        //     let id = format!("{:04}", rng);
+        //     let requestId = &format!("{}_{}",
+        //         SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+        //             .unwrap().as_millis(), id
+        //     );
 
-            let value = value.clone();
-            let value = value.add_query_string("osver", osver)
-                .add_query_string("deviceId", deviceId)
-                .add_query_string("versioncode", versioncode)
-                .add_query_string("mobilename", mobilename)
-                .add_query_string("buildver", buildver)
-                .add_query_string("resolution", resolution)
-                .add_query_string("os", os)
-                .add_query_string("channel", channel)
-                .add_query_string("requestId", requestId);
-            let value = if let Some(val) = cookies.get_cookies_value_or("MUSIC_U") {
-                value.add_query_string("MUSIC_U", val)
-            } else if let Some(val) = cookies.get_cookies_value_or("MUSIC_A") {
-                value.add_query_string("MUSIC_A", val)
-            } else {
-                value
-            };
+        //     let value = value.clone();
+        //     let value = value.add_query_string("osver", osver)
+        //         .add_query_string("deviceId", deviceId)
+        //         .add_query_string("versioncode", versioncode)
+        //         .add_query_string("mobilename", mobilename)
+        //         .add_query_string("buildver", buildver)
+        //         .add_query_string("resolution", resolution)
+        //         .add_query_string("os", os)
+        //         .add_query_string("channel", channel)
+        //         .add_query_string("requestId", requestId);
+        //     let value = if let Some(val) = cookies.get_cookies_value_or("MUSIC_U") {
+        //         value.add_query_string("MUSIC_U", val)
+        //     } else if let Some(val) = cookies.get_cookies_value_or("MUSIC_A") {
+        //         value.add_query_string("MUSIC_A", val)
+        //     } else {
+        //         value
+        //     };
 
-            Crypto::eapi(params.url.unwrap(), &value.json())
-        },
+        //     Crypto::eapi(params.url.unwrap(), &value.json())
+        // },
         "weapi" => {
-            let csrf_token = cookies.iter().find_map(|val|{
-                if val.name() == "__csrf" {
-                    return Some(val.value());
-                } else {
-                    return None;
-                }
-            }).unwrap_or("");
+            // let csrf_token = cookies.iter().find_map(|val|{
+            //     if val.name() == "__csrf" {
+            //         return Some(val.value());
+            //     } else {
+            //         return None;
+            //     }
+            // }).unwrap_or("");
+
+            let csrf_token = cookies.get("__csrf").unwrap_or(&"");
 
             println!("csrf_token: {}", csrf_token);
 
@@ -250,7 +285,7 @@ pub fn create_request(
         _ => url,
     };
 
-    println!("body={}", body);
+    println!("headers={:?}", headers);
 
     let client = ClientBuilder::new()
         .default_headers(headers)
