@@ -2,6 +2,7 @@ mod app;
 pub mod crypto;
 pub mod api;
 
-fn main() {
-    app::start_server();
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
+    app::start_server().await
 }

@@ -5,7 +5,7 @@ use actix_web::{
 };
 use actix_web::http::{ Uri, };
 use reqwest::header::{HOST, CONTENT_TYPE, USER_AGENT, REFERER, HeaderMap, ToStrError, CONTENT_ENCODING, COOKIE};
-use reqwest::blocking::{
+use reqwest::{
     ClientBuilder,
     Client,
 };
@@ -15,9 +15,7 @@ use urlqstring::QueryParams;
 use super::crypto::Crypto;
 use actix_web::error::UrlencodedError::ContentType;
 use crate::crypto::HashType;
-use base64::CharacterSet::Crypt;
 use rand::{ thread_rng, Rng };
-use std::cell::Ref;
 use actix_web::http::header::Date;
 use std::time::SystemTime;
 use std::collections::HashMap;
@@ -138,12 +136,12 @@ impl<'a> ToStringExtensionMethods for Vec<Cookie<'a>> {
     }
 }
 
-pub fn create_request(
+pub async fn create_request<'a>(
     method: &str,
     url: &str,
-    value: &QueryParams,
-    params: &RequestParams
-    ) -> serde_json::Value {
+    value: &QueryParams<'a>,
+    params: &RequestParams<'a>
+    ) -> Result<reqwest::Response, reqwest::Error> {
 
     let cookies = &params.cookies;
     let crypto = params.crypto;
@@ -275,10 +273,13 @@ pub fn create_request(
         .build()
         .unwrap();
 
-    client.post(url)
+    let value = client.post(url)
         .body(body)
-        .send().unwrap()
-        .json().unwrap()
+        .send().await?;
+
+    println!("value={:?}", value.headers());
+
+    Ok(value)
 }
 
 fn choose_user_agent(ua: &str) -> &str {

@@ -1,5 +1,13 @@
 
-use actix_web::{HttpRequest, HttpResponse, HttpServer, Responder, App, FromRequest, web, error, middleware, get, HttpMessage};
+use actix_web::{
+    HttpRequest, HttpResponse, HttpServer, HttpMessage,
+    Responder, App, FromRequest,
+    web, error, middleware, get
+};
+use actix_http::{
+    http
+};
+use actix_files as fs;
 use actix_web::http::{ Uri, };
 use reqwest::header::{
     HOST, CONTENT_TYPE, USER_AGENT, REFERER,
@@ -29,16 +37,55 @@ use std::ops::Deref;
 use actix_web::error::UrlencodedError::ContentType;
 use base64::CharacterSet::Crypt;
 use crate::api::RequestParams;
+use std::alloc::handle_alloc_error;
+use std::time::SystemTime;
 
 const CONTENT_TP: &'static str = "application/json; charset=utf-8";
 
-fn index_root() -> impl Responder {
+async fn index_root() -> impl Responder {
     println!("index_root.....");
-    HttpResponse::Ok().body("Hello World!")
+    HttpResponse::Ok()
+        .content_type(CONTENT_TP)
+        .body("hello world")
+}
+
+async fn handle_request<'a>(
+    url: &str,
+    info: QueryParams<'a>,
+    params: RequestParams<'a>,
+    method: &str
+) -> impl Responder {
+    let response = api::create_request(
+        method,
+        &url,
+        &info,
+        &params,
+    ).await.unwrap();
+
+    let mut response_builder = HttpResponse::Ok();
+
+    response.cookies().for_each(|x| {
+        let name: String = x.name().to_string().clone();
+        let value: String = x.value().to_string().clone();
+        let domain: String = x.domain().unwrap_or(".music.163.com").to_string().clone();
+        let path: String = x.path().unwrap_or("").to_string().clone();
+        let max_age = x.max_age().unwrap_or(std::time::Duration::from_secs(1800));
+        let cookie = http::Cookie::build( name, value )
+            .domain(domain)
+            .path(path)
+            .max_age(max_age.as_secs() as i64)
+            .finish();
+        println!("cookie={:?}", x);
+        response_builder.cookie(cookie);
+    });
+
+    response_builder
+        .content_type(CONTENT_TP)
+        .body(response.json::<serde_json::Value>().await.unwrap().clone())
 }
 
 #[get("/activate/init/profile")]
-fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
+async fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
     let url = "http://music.163.com/eapi/activate/initProfile";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -46,23 +93,14 @@ fn index_activate_init_profile( req: HttpRequest ) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/album/detail/dynamic")]
-fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
+async fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/album/detail/dynamic";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -70,47 +108,29 @@ fn index_album_detail_dynamic(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/album/newest")]
-fn index_album_newest(req: HttpRequest) -> impl Responder {
+async fn index_album_newest(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/discovery/newAlbum";
-    let info = QueryParams::from("");
+    let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/album/sub")]
-fn index_album_sub(req: HttpRequest ) -> impl Responder {
+async fn index_album_sub(req: HttpRequest ) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/api/album/{}", id);
@@ -120,23 +140,14 @@ fn index_album_sub(req: HttpRequest ) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/album/sublist")]
-fn index_album_sublist(req: HttpRequest) -> impl Responder {
+async fn index_album_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/album/sublist";
     let query = QueryParams::from(req.query_string());
 
@@ -151,23 +162,14 @@ fn index_album_sublist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/album")]
-fn index_album(req: HttpRequest) -> impl Responder {
+async fn index_album(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap_or("32311");
     let url = &format!("https://music.163.com/weapi/v1/album/{}", id);
@@ -177,23 +179,14 @@ fn index_album(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artist/album")]
-fn index_artist_album(req: HttpRequest) -> impl Responder {
+async fn index_artist_album(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap_or("6452");
     let url = format!("https://music.163.com/weapi/artist/albums/{}",id);
@@ -209,23 +202,14 @@ fn index_artist_album(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/artist/desc")]
-fn index_artist_desc(req: HttpRequest) -> impl Responder {
+async fn index_artist_desc(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/introduction";
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap_or("6452");
@@ -236,23 +220,14 @@ fn index_artist_desc(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artist/list")]
-fn index_artist_list(req: HttpRequest) -> impl Responder {
+async fn index_artist_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/list";
     let query = QueryParams::from(req.query_string());
 
@@ -270,23 +245,14 @@ fn index_artist_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artist/mv")]
-fn index_artist_mv(req: HttpRequest) -> impl Responder {
+async fn index_artist_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/mvs";
     let query =  QueryParams::from(req.query_string());
 
@@ -303,23 +269,14 @@ fn index_artist_mv(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artist/sub")]
-fn index_artist_sub(req: HttpRequest) -> impl Responder {
+async fn index_artist_sub(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let artistId = query.value("id").unwrap_or("6452");
     let t = query.value("t").unwrap_or("0");
@@ -337,23 +294,14 @@ fn index_artist_sub(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/artist/sublist")]
-fn index_artist_sublist(req: HttpRequest) -> impl Responder {
+async fn index_artist_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/sublist";
     let query = QueryParams::from(req.query_string());
 
@@ -368,23 +316,14 @@ fn index_artist_sublist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artist/top/song")]
-fn index_artist_top_song(req: HttpRequest) -> impl Responder {
+async fn index_artist_top_song(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/artist/top/song";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -392,23 +331,14 @@ fn index_artist_top_song(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/artists")]
-fn index_artists(req: HttpRequest) -> impl Responder {
+async fn index_artists(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap_or("6452");
     let url = format!("https://music.163.com/weapi/v1/artist/{}", id);
@@ -418,23 +348,14 @@ fn index_artists(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/banner")]
-fn index_banner(req: HttpRequest) -> impl Responder {
+async fn index_banner(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/v2/banner/get";
     let id = QueryParams::from(req.query_string()).value("type").unwrap_or("0")
         .parse::<usize>().unwrap_or(0);
@@ -446,29 +367,22 @@ fn index_banner(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/batch")]
-fn index_batch(req: HttpRequest) -> impl Responder {
+async fn index_batch(req: HttpRequest) -> impl Responder {
    let url = "http://music.163.com/eapi/batch";
-
+   HttpResponse::Ok()
+       .content_type(CONTENT_TP)
+       .body("")
 }
 
 #[get("/captcha/register")]
-fn index_captcha_register(req: HttpRequest) -> impl Responder {
+async fn index_captcha_register(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/register/cellphone";
     let query = QueryParams::from(req.query_string());
 
@@ -486,23 +400,14 @@ fn index_captcha_register(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/captcha/sent")]
-fn index_captcha_sent(req: HttpRequest) -> impl Responder {
+async fn index_captcha_sent(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/sms/captcha/sent";
     let query = QueryParams::from(req.query_string());
 
@@ -516,23 +421,14 @@ fn index_captcha_sent(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/captcha/verify")]
-fn index_captcha_verify(req: HttpRequest) -> impl Responder {
+async fn index_captcha_verify(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/sms/captcha/verify";
     let query = QueryParams::from(req.query_string());
 
@@ -548,23 +444,14 @@ fn index_captcha_verify(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/cellphone/existence/check")]
-fn index_cellphone_existence_check(req: HttpRequest) -> impl Responder {
+async fn index_cellphone_existence_check(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/eapi/cellphone/existence/check";
     let query = QueryParams::from(req.query_string());
 
@@ -578,23 +465,14 @@ fn index_cellphone_existence_check(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/check/music")]
-fn index_check_music(req: HttpRequest) -> impl Responder {
+async fn index_check_music(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/enhance/player/url";
     let query = QueryParams::from(req.query_string());
 
@@ -608,23 +486,14 @@ fn index_check_music(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/comment")]
-fn index_comment(req: HttpRequest) -> impl Responder {
+async fn index_comment(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = operator[ query.value("t").unwrap().parse::<usize>().unwrap_or(0) ];
     let url = format!("https://music.163.com/weapi/resource/comments/{}", t);
@@ -663,23 +532,14 @@ fn index_comment(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/album")]
-fn index_comment_album(req: HttpRequest) -> impl Responder {
+async fn index_comment_album(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_AL_3_{}", id);
@@ -691,23 +551,14 @@ fn index_comment_album(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/dj")]
-fn index_comment_dj(req: HttpRequest) -> impl Responder {
+async fn index_comment_dj(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_DJ_1_{}", id);
@@ -718,23 +569,14 @@ fn index_comment_dj(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/event")]
-fn index_comment_event(req: HttpRequest) -> impl Responder {
+async fn index_comment_event(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("threadId").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/{}", id);
@@ -745,23 +587,14 @@ fn index_comment_event(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/hot")]
-fn index_comment_hot(req: HttpRequest) -> impl Responder {
+async fn index_comment_hot(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let _type = resource_type[query.value("type").unwrap().parse::<usize>().unwrap_or(0)];
     let id = query.value("id").unwrap();
@@ -781,23 +614,14 @@ fn index_comment_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/hotwall/list")]
-fn index_comment_hotwall_list(req: HttpRequest) -> impl Responder {
+async fn index_comment_hotwall_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/comment/hotwall/list/get";
 
     let info = QueryParams::from("");
@@ -806,23 +630,14 @@ fn index_comment_hotwall_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/comment/like")]
-fn index_comment_like(req: HttpRequest) -> impl Responder {
+async fn index_comment_like(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = query.value("t").unwrap();
     let url = format!("https://music.163.com/weapi/v1/comment/{}", t);
@@ -842,23 +657,14 @@ fn index_comment_like(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/music")]
-fn index_comment_music(req: HttpRequest) ->impl Responder {
+async fn index_comment_music(req: HttpRequest) ->impl Responder {
     let query = QueryParams::from(req.query_string());
     let rid = query.value("id").unwrap();
     let url = format!("https://music.163.com/api/v1/resource/comments/R_SO_4_{}", rid);
@@ -869,23 +675,14 @@ fn index_comment_music(req: HttpRequest) ->impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/mv")]
-fn index_comment_mv(req: HttpRequest) -> impl Responder {
+async fn index_comment_mv(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let rid = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_MV_5_{}", rid);
@@ -896,23 +693,14 @@ fn index_comment_mv(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/playlist")]
-fn index_comment_playlist(req: HttpRequest) -> impl Responder {
+async fn index_comment_playlist(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let rid = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/A_PL_0_{}", rid);
@@ -924,23 +712,14 @@ fn index_comment_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/comment/video")]
-fn index_comment_video(req: HttpRequest) -> impl Responder {
+async fn index_comment_video(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let rid = query.value("id").unwrap();
     let url = format!("https://music.163.com/weapi/v1/resource/comments/R_VI_62_{}", rid);
@@ -951,23 +730,14 @@ fn index_comment_video(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/daily_signin")]
-fn index_daily_signin(req: HttpRequest) -> impl Responder {
+async fn index_daily_signin(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/point/dailyTask";
     let info = QueryParams::from(req.query_string());
     let info = QueryParams::from("");
@@ -976,23 +746,14 @@ fn index_daily_signin(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/digitalAlbum/purchased")]
-fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
+async fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/digitalAlbum/purchased";
     let query = QueryParams::from(req.query_string());
     let limit = query.value("limit").unwrap_or("30");
@@ -1006,23 +767,14 @@ fn index_digitalAlbum_purchased(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/banner")]
-fn index_dj_banner(req: HttpRequest) -> impl Responder {
+async fn index_dj_banner(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/banner/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -1030,23 +782,14 @@ fn index_dj_banner(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/category/excludehot")]
-fn index_dj_category_exclude_hot(req: HttpRequest) -> impl Responder {
+async fn index_dj_category_exclude_hot(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/category/excludehot";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -1054,23 +797,14 @@ fn index_dj_category_exclude_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/category/recommend")]
-fn index_dj_category_recommend(req: HttpRequest) -> impl Responder {
+async fn index_dj_category_recommend(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/category/recommend";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -1078,23 +812,14 @@ fn index_dj_category_recommend(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/catelist")]
-fn index_dj_category_list(req: HttpRequest) -> impl Responder {
+async fn index_dj_category_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/category/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -1102,23 +827,14 @@ fn index_dj_category_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/detail")]
-fn index_dj_detail(req: HttpRequest) -> impl Responder {
+async fn index_dj_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get";
     let info = QueryParams::from(req.query_string());
 
@@ -1127,23 +843,14 @@ fn index_dj_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/hot")]
-fn index_dj_hot(req: HttpRequest) -> impl Responder {
+async fn index_dj_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/hot/v1";
     let info = QueryParams::from(req.query_string());
 
@@ -1152,23 +859,14 @@ fn index_dj_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist/pay")]
-fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
+async fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/home/paygift/list?_nmclfl=1";
     let info = QueryParams::from(req.query_string());
 
@@ -1177,23 +875,14 @@ fn index_dj_pay_gift(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/program/detail")]
-fn index_dj_program_details(req: HttpRequest) -> impl Responder {
+async fn index_dj_program_details(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/dj/program/detail";
     let info = QueryParams::from(req.query_string());
 
@@ -1202,23 +891,14 @@ fn index_dj_program_details(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/program/toplist")]
-fn index_dj_program_toplist(req: HttpRequest) -> impl Responder {
+async fn index_dj_program_toplist(req: HttpRequest) -> impl Responder {
    let url = "https://music.163.com/api/program/toplist/v1";
    let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1226,23 +906,14 @@ fn index_dj_program_toplist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/program/toplist/hours")]
-fn index_dj_program_toplist_hours(req: HttpRequest) -> impl Responder {
+async fn index_dj_program_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djprogram/toplist/hours";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1250,23 +921,14 @@ fn index_dj_program_toplist_hours(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/program")]
-fn index_dj_program(req: HttpRequest) -> impl Responder {
+async fn index_dj_program(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/dj/program/byradio";
     let query = QueryParams::from(req.query_string());
     let radioId = query.value("rid").unwrap();
@@ -1283,23 +945,14 @@ fn index_dj_program(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/radio/hot")]
-fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
+async fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/hot";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1307,23 +960,14 @@ fn index_dj_radio_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/recommend")]
-fn index_dj_recommend(req: HttpRequest) -> impl Responder {
+async fn index_dj_recommend(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend/v1";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -1331,23 +975,14 @@ fn index_dj_recommend(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/recommend/type")]
-fn index_dj_recommend_type(req: HttpRequest) -> impl Responder {
+async fn index_dj_recommend_type(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/recommend";
     let query = QueryParams::from(req.query_string());
     let cateId = query.value("type").unwrap_or("10001");
@@ -1358,23 +993,14 @@ fn index_dj_recommend_type(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/sub")]
-fn index_dj_sub(req: HttpRequest) -> impl Responder {
+async fn index_dj_sub(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = if query.value("t").unwrap_or("0").parse::<usize>().unwrap() == 1 {
         "sub"
@@ -1390,24 +1016,15 @@ fn index_dj_sub(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/dj/sublist")]
-fn index_dj_sub_list(req: HttpRequest) -> impl Responder {
+async fn index_dj_sub_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/subed";
     let info = QueryParams::from( req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1415,24 +1032,15 @@ fn index_dj_sub_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/today/perfered")]
-fn index_dj_today_perfered(req: HttpRequest) -> impl Responder {
+async fn index_dj_today_perfered(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/djradio/home/today/perfered";
     let info = QueryParams::from( req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1440,24 +1048,15 @@ fn index_dj_today_perfered(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist")]
-fn index_dj_toplist(req: HttpRequest) -> impl Responder {
+async fn index_dj_toplist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/toplist";
 
     let query = QueryParams::from(req.query_string());
@@ -1478,24 +1077,15 @@ fn index_dj_toplist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist/hours")]
-fn index_dj_toplist_hours(req: HttpRequest) -> impl Responder {
+async fn index_dj_toplist_hours(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/hours";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1503,24 +1093,15 @@ fn index_dj_toplist_hours(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist/newcomer")]
-fn index_dj_toplist_newcomer(req: HttpRequest) -> impl Responder {
+async fn index_dj_toplist_newcomer(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/newcomer";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1528,24 +1109,15 @@ fn index_dj_toplist_newcomer(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist/pay")]
-fn index_dj_toplist_pay(req: HttpRequest) -> impl Responder {
+async fn index_dj_toplist_pay(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/djradio/toplist/pay";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1553,24 +1125,15 @@ fn index_dj_toplist_pay(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None,
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/dj/toplist/popular")]
-fn index_dj_toplist_popular(req: HttpRequest) -> impl Responder {
+async fn index_dj_toplist_popular(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/dj/toplist/popular";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1578,24 +1141,15 @@ fn index_dj_toplist_popular(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/event")]
-fn index_event(req: HttpRequest) -> impl Responder {
+async fn index_event(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/event/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1603,24 +1157,15 @@ fn index_event(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/event/del")]
-fn index_event_del(req: HttpRequest) -> impl Responder {
+async fn index_event_del(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/eapi/event/delete";
     let query = QueryParams::from(req.query_string());
     let t = &format!("id={}", query.value("evId").unwrap());
@@ -1630,24 +1175,15 @@ fn index_event_del(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/event/forward")]
-fn index_event_forward(req: HttpRequest) -> impl Responder {
+async fn index_event_forward(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/event/forward";
     let query = QueryParams::from(req.query_string());
     let t = &format!("forwards={}&id={}&eventUserId={}",
@@ -1661,24 +1197,15 @@ fn index_event_forward(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/fm_trash")]
-fn index_fm_trash(req: HttpRequest) -> impl Responder {
+async fn index_fm_trash(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap();
     let time = query.value("time").unwrap_or("25");
@@ -1691,24 +1218,15 @@ fn index_fm_trash(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/follow")]
-fn index_follow(req: HttpRequest) -> impl Responder {
+async fn index_follow(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = if query.value("t").unwrap_or("0") == "1" {
         "follow"
@@ -1723,25 +1241,16 @@ fn index_follow(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
     let info = QueryParams::from("");
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/hot/topic")]
-fn index_hot_topic(req: HttpRequest) -> impl Responder {
+async fn index_hot_topic(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/act/hot";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1749,24 +1258,15 @@ fn index_hot_topic(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/like")]
-fn index_like(req: HttpRequest) -> impl Responder {
+async fn index_like(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let alg = query.value("alg").unwrap_or("itembased");
     let id = query.value("id").unwrap();
@@ -1784,24 +1284,15 @@ fn index_like(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/likelist")]
-fn index_likelist(req: HttpRequest) -> impl Responder {
+async fn index_likelist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/like/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1809,24 +1300,15 @@ fn index_likelist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/login")]
-fn index_login(req: HttpRequest) -> impl Responder {
+async fn index_login(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/login";
     let query = QueryParams::from(req.query_string());
     let username = query.value("email").unwrap();
@@ -1845,24 +1327,14 @@ fn index_login(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params,
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/login/cellphone")]
-fn index_login_cellphone(req: HttpRequest) -> impl Responder {
+async fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/login/cellphone";
     let query = QueryParams::from(req.query_string());
     let phone = query.value("phone").unwrap();
@@ -1875,7 +1347,8 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     let rememberLogin = query.value("rememberLogin").unwrap_or("true");
 
     let cookies = req.cookies().unwrap();
-    let cookies = cookies.to_hashmap();
+    let mut cookies = cookies.to_hashmap();
+    cookies.insert("os", "pc");
 
     let p =format!("phone={}&countrycode={}&password={}&rememberLogin={}",
                    phone, countrycode, password, rememberLogin
@@ -1885,94 +1358,60 @@ fn index_login_cellphone(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
 
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/login/refresh")]
-fn index_login_refresh(req: HttpRequest) -> impl Responder {
+async fn index_login_refresh(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/login/token/refresh";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("{}");
     let params = RequestParams {
         ua: "pc",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from("{}"),
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/login/status")]
-fn index_login_status(req: HttpRequest) -> impl Responder {
+async fn index_login_status(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("");
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from(("")),
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/logout")]
-fn index_logout(req: HttpRequest) -> impl Responder {
+async fn index_logout(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/logout";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("");
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from(""),
-                &params
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/lyric")]
-fn index_lyric(req: HttpRequest) -> impl Responder {
+async fn index_lyric(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/lyric?lv=-1&kv=-1&tv=-1";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -1980,23 +1419,14 @@ fn index_lyric(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/msg/comments")]
-fn index_msg_comments(req: HttpRequest) -> impl Responder {
+async fn index_msg_comments(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let uid = query.value("uid").unwrap();
     let url = format!("https://music.163.com/api/v1/user/comments/{})",uid);
@@ -2012,23 +1442,14 @@ fn index_msg_comments(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/msg/forwards")]
-fn index_msg_forwards(req: HttpRequest) -> impl Responder {
+async fn index_msg_forwards(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/forwards/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2036,23 +1457,14 @@ fn index_msg_forwards(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/msg/notices")]
-fn index_msg_notices(req: HttpRequest) -> impl Responder {
+async fn index_msg_notices(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/notices";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2060,23 +1472,14 @@ fn index_msg_notices(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/msg/private")]
-fn index_msg_private(req: HttpRequest) -> impl Responder {
+async fn index_msg_private(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/private/users";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2084,23 +1487,14 @@ fn index_msg_private(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/msg/private/history")]
-fn index_msg_private_history(req: HttpRequest) -> impl Responder {
+async fn index_msg_private_history(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/msg/private/history";
     let info = QueryParams::from(req.query_string())
             .replace_key("uid", "userId")
@@ -2110,23 +1504,14 @@ fn index_msg_private_history(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/all")]
-fn index_mv_all(req: HttpRequest) -> impl Responder {
+async fn index_mv_all(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/api/mv/all";
 
     let query = QueryParams::from(req.query_string());
@@ -2149,23 +1534,14 @@ fn index_mv_all(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/detail")]
-fn index_mv_detail(req: HttpRequest) -> impl Responder {
+async fn index_mv_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/mv/detail";
     let info = QueryParams::from(req.query_string())
         .replace_key("mvid", "id");
@@ -2174,23 +1550,14 @@ fn index_mv_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/exclusive/rcmd")]
-fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
+async fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/api/mv/exclusive/rcmd";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2198,23 +1565,14 @@ fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/first")]
-fn index_mv_first(req: HttpRequest) -> impl Responder {
+async fn index_mv_first(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/weapi/mv/first";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2222,23 +1580,14 @@ fn index_mv_first(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/sub")]
-fn index_mv_sub(req: HttpRequest) -> impl Responder {
+async fn index_mv_sub(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = if query.value("t").unwrap_or("0") == "1" {
         "sub"
@@ -2255,23 +1604,14 @@ fn index_mv_sub(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/mv/sublist")]
-fn index_mv_sublist(req: HttpRequest) -> impl Responder {
+async fn index_mv_sublist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/allvideo/sublist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2279,23 +1619,14 @@ fn index_mv_sublist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/mv/url")]
-fn index_mv_url(req: HttpRequest) -> impl Responder {
+async fn index_mv_url(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/song/enhance/play/mv/url";
 
     let query = QueryParams::from(req.query_string());
@@ -2309,47 +1640,29 @@ fn index_mv_url(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/personal_fm")]
-fn index_personal_fm(req: HttpRequest) -> impl Responder {
+async fn index_personal_fm(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/radio/get";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("");
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from(""),
-                &params
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/personalized")]
-fn index_personalized(req: HttpRequest) -> impl Responder {
+async fn index_personalized(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/playlist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2357,23 +1670,14 @@ fn index_personalized(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/personalized/djprogram")]
-fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
+async fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/djprogram";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -2381,23 +1685,14 @@ fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/personalized/mv")]
-fn index_personalized_mv(req: HttpRequest) -> impl Responder {
+async fn index_personalized_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/mv";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -2405,23 +1700,14 @@ fn index_personalized_mv(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/personalized/newsong")]
-fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
+async fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/newsong";
     let t = &format!("type=recommend");
     let info = QueryParams::from(t);
@@ -2430,23 +1716,14 @@ fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/personalized/privatecontent")]
-fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
+async fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/personalized/privatecontent";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -2454,23 +1731,14 @@ fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/catlist")]
-fn index_playlist_catlist(req: HttpRequest) -> impl Responder {
+async fn index_playlist_catlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/catalogue";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -2478,23 +1746,14 @@ fn index_playlist_catlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/create")]
-fn index_playlist_create(req: HttpRequest) -> impl Responder {
+async fn index_playlist_create(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/create";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2502,23 +1761,14 @@ fn index_playlist_create(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/delete")]
-fn index_playlist_delete(req: HttpRequest) -> impl Responder {
+async fn index_playlist_delete(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/delete";
     let info = QueryParams::from(req.query_string())
         .replace_key("id","pid");
@@ -2527,23 +1777,14 @@ fn index_playlist_delete(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/desc/update")]
-fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
+async fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/desc/update";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2551,23 +1792,14 @@ fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/detail")]
-fn index_playlist_detail(req: HttpRequest) -> impl Responder {
+async fn index_playlist_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v3/playlist/detail";
 
     let query = QueryParams::from(req.query_string());
@@ -2580,23 +1812,14 @@ fn index_playlist_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/hot")]
-fn index_playlist_hot(req: HttpRequest) -> impl Responder {
+async fn index_playlist_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/hottags";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -2604,23 +1827,14 @@ fn index_playlist_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/name/update")]
-fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
+async fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/update/name";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2628,23 +1842,14 @@ fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/subscribe")]
-fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
+async fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = if query.value("t").unwrap_or("0") == "1" {
         "subscribe"
@@ -2659,23 +1864,14 @@ fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/playlist/subscribers")]
-fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
+async fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/subscribers";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2683,24 +1879,15 @@ fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 
 }
 
 #[get("/playlist/tags/update")]
-fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
+async fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
     let url = "http://interface3.music.163.com/eapi/playlist/tags/update";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2708,23 +1895,14 @@ fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/tracks")]
-fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
+async fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/manipulate/tracks";
     let query = QueryParams::from(req.query_string());
     let t = &format!("op={}&pid={}&trackIds=[{}]",
@@ -2738,23 +1916,14 @@ fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playlist/update")]
-fn index_playlist_update(req: HttpRequest) -> impl Responder {
+async fn index_playlist_update(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/batch";
 
     let query = QueryParams::from(req.query_string());
@@ -2775,23 +1944,14 @@ fn index_playlist_update(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/playmode/intelligence/list")]
-fn index_playmode_interlligence_list(req: HttpRequest) -> impl Responder {
+async fn index_playmode_interlligence_list(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/playmode/intelligence/list";
 
     let query = QueryParams::from(req.query_string());
@@ -2813,23 +1973,14 @@ fn index_playmode_interlligence_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/program/recommend")]
-fn index_program_recommend(req: HttpRequest) -> impl Responder {
+async fn index_program_recommend(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/program/recommend/v1";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2837,23 +1988,14 @@ fn index_program_recommend(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/rebind")]
-fn index_rebind(req: HttpRequest) -> impl Responder {
+async fn index_rebind(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/replaceCellphone";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2861,23 +2003,14 @@ fn index_rebind(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/recommend/resource")]
-fn index_recommend_resource(req: HttpRequest) -> impl Responder {
+async fn index_recommend_resource(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/recommend/resource";
     let info = QueryParams::from("");
     println!("info={:?}", info);
@@ -2886,50 +2019,32 @@ fn index_recommend_resource(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/recommend/songs")]
-fn index_recommend_songs(req: HttpRequest) -> impl Responder {
+async fn index_recommend_songs(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/recommend/songs";
     let t = &format!("total={}", true );
     let info = QueryParams::from(t);
     let cookies = req.cookies().unwrap();
-    let cookies = cookies.to_hashmap();
     println!("cookie={:?}", cookies);
+    let cookies = cookies.to_hashmap();
     println!("headers={:?}", req.headers());
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/register/cellphone")]
-fn index_register_cellphone(req: HttpRequest) -> impl Responder {
+async fn index_register_cellphone(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/register/cellphone";
     let query = QueryParams::from(req.query_string());
     let pw = query.value("password").unwrap();
@@ -2943,23 +2058,14 @@ fn index_register_cellphone(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/related/allvideo")]
-fn index_related_allvideo(req: HttpRequest) -> impl Responder {
+async fn index_related_allvideo(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/allvideo/rcmd";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -2967,23 +2073,14 @@ fn index_related_allvideo(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/related/playlist")]
-fn index_related_playlist(req: HttpRequest) -> impl Responder {
+async fn index_related_playlist(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let id = query.value("id").unwrap();
     let url = format!("https://music.163.com/playlist?id={}", id);
@@ -2993,23 +2090,14 @@ fn index_related_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/resource/like")]
-fn index_resource_like(req: HttpRequest) -> impl Responder {
+async fn index_resource_like(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let t = if query.value("t").unwrap_or("0") == "1" {
         "like"
@@ -3035,23 +2123,14 @@ fn index_resource_like(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/scrobble")]
-fn index_scrobble(req: HttpRequest) -> impl Responder {
+async fn index_scrobble(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/feedback/weblog";
 
     let query = QueryParams::from(req.query_string());
@@ -3074,23 +2153,14 @@ fn index_scrobble(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search")]
-fn index_search(req: HttpRequest) -> impl Responder {
+async fn index_search(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/search/get";
 
     let query = QueryParams::from(req.query_string());
@@ -3107,23 +2177,14 @@ fn index_search(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search/default")]
-fn index_search_default(req: HttpRequest) -> impl Responder{
+async fn index_search_default(req: HttpRequest) -> impl Responder{
     let url = "http://interface3.music.163.com/eapi/search/defaultkeyword/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -3131,23 +2192,14 @@ fn index_search_default(req: HttpRequest) -> impl Responder{
     let params = RequestParams {
         ua: "",
         crypto: "eapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search/hot")]
-fn index_search_hot(req: HttpRequest) -> impl Responder {
+async fn index_search_hot(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/search/hot";
     let value = QueryParams::from("type=1111");
     let cookies = req.cookies().unwrap();
@@ -3155,24 +2207,15 @@ fn index_search_hot(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
     let info = QueryParams::from("");
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search/hot/detail")]
-fn index_search_hot_detail(req: HttpRequest) -> impl Responder{
+async fn index_search_hot_detail(req: HttpRequest) -> impl Responder{
     let url = "https://music.163.com/weapi/hotsearchlist/get";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -3180,23 +2223,14 @@ fn index_search_hot_detail(req: HttpRequest) -> impl Responder{
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search/multimatch")]
-fn index_search_multimatch(req: HttpRequest) -> impl Responder {
+async fn index_search_multimatch(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/search/suggest/multimatch";
     let info = QueryParams::from(req.query_string())
         .replace_key("keywords","s");
@@ -3205,23 +2239,14 @@ fn index_search_multimatch(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/search/suggest")]
-fn index_search_suggest(req: HttpRequest) -> impl Responder {
+async fn index_search_suggest(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let rtype = if query.value("type").unwrap_or("web") == "mobile" {
         "keyword"
@@ -3238,23 +2263,14 @@ fn index_search_suggest(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/send/playlist")]
-fn index_send_playlist(req: HttpRequest) -> impl Responder {
+async fn index_send_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/msg/private/send";
 
     let query = QueryParams::from(req.query_string());
@@ -3269,23 +2285,14 @@ fn index_send_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/send/text")]
-fn index_send_text(req: HttpRequest) -> impl Responder {
+async fn index_send_text(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/msg/private/send";
 
     let query = QueryParams::from(req.query_string());
@@ -3300,23 +2307,14 @@ fn index_send_text(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/setting")]
-fn index_setting(req: HttpRequest) -> impl Responder {
+async fn index_setting(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/user/setting";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -3324,23 +2322,14 @@ fn index_setting(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/share/resource")]
-fn index_share_resource(req: HttpRequest) -> impl Responder {
+async fn index_share_resource(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/share/friends/resource";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3348,23 +2337,14 @@ fn index_share_resource(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/simi/artist")]
-fn index_simi_artist(req: HttpRequest) -> impl Responder {
+async fn index_simi_artist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiArtist";
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "artistid");
@@ -3373,23 +2353,14 @@ fn index_simi_artist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/simi/mv")]
-fn index_simi_mv(req: HttpRequest) -> impl Responder {
+async fn index_simi_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiMV";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3397,23 +2368,14 @@ fn index_simi_mv(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/simi/playlist")]
-fn index_simi_playlist(req: HttpRequest) -> impl Responder {
+async fn index_simi_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiPlaylist";
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
@@ -3422,23 +2384,14 @@ fn index_simi_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/simi/song")]
-fn index_simi_song(req: HttpRequest) -> impl Responder {
+async fn index_simi_song(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/simiSong";
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
@@ -3447,23 +2400,14 @@ fn index_simi_song(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/simi/user")]
-fn index_simi_user(req: HttpRequest) -> impl Responder {
+async fn index_simi_user(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/discovery/simiUser";
     let info = QueryParams::from(req.query_string())
         .replace_key("id", "songid");
@@ -3472,23 +2416,14 @@ fn index_simi_user(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/song/detail")]
-fn index_song_detail(req: HttpRequest) -> impl Responder {
+async fn index_song_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v3/song/detail";
     let query = QueryParams::from(req.query_string());
 //    let ids: Vec<usize> = query.value("ids")
@@ -3509,23 +2444,14 @@ fn index_song_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/song/url")]
-fn index_song_url(req: HttpRequest) -> impl Responder {
+async fn index_song_url(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/song/enhance/player/url";
     let mut query = QueryParams::from(req.query_string())
         .replace_key("id", "ids");
@@ -3548,23 +2474,14 @@ fn index_song_url(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/album")]
-fn index_top_album(req: HttpRequest) -> impl Responder {
+async fn index_top_album(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/album/new";
 
     let query = QueryParams::from(req.query_string());
@@ -3581,23 +2498,14 @@ fn index_top_album(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/artists")]
-fn index_top_artists(req: HttpRequest) -> impl Responder {
+async fn index_top_artists(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/artist/top";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3605,23 +2513,14 @@ fn index_top_artists(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/list")]
-fn index_top_list(req: HttpRequest) -> impl Responder {
+async fn index_top_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v3/playlist/detail";
     let query = QueryParams::from(req.query_string());
     let id = topList[query.value("idx").unwrap_or("0").parse::<usize>().unwrap()];
@@ -3632,23 +2531,14 @@ fn index_top_list(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/mv")]
-fn index_top_mv(req: HttpRequest) -> impl Responder {
+async fn index_top_mv(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/mv/toplist";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3656,23 +2546,14 @@ fn index_top_mv(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/playlist")]
-fn index_top_playlist(req: HttpRequest) -> impl Responder {
+async fn index_top_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/list";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3680,23 +2561,14 @@ fn index_top_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/playlist/highquality")]
-fn index_top_playlist_highquality(req: HttpRequest) -> impl Responder {
+async fn index_top_playlist_highquality(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/playlist/highquality/list";
 
     let query = QueryParams::from(req.query_string());
@@ -3713,23 +2585,14 @@ fn index_top_playlist_highquality(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/top/song")]
-fn index_top_song(req: HttpRequest) -> impl Responder {
+async fn index_top_song(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/discovery/new/songs";
     let t = &format!("areaId={}&total=true", QueryParams::from(req.query_string()).value("type").unwrap_or("0"));
     let info = QueryParams::from(t);
@@ -3738,23 +2601,14 @@ fn index_top_song(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/toplist")]
-fn index_toplist(req: HttpRequest) -> impl Responder {
+async fn index_toplist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -3762,23 +2616,14 @@ fn index_toplist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/toplist/artist")]
-fn index_toplist_artist(req: HttpRequest) -> impl Responder {
+async fn index_toplist_artist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/artist";
     let t = &format!("type=1&limit=100&offset=0&total=true");
     let info = QueryParams::from(t);
@@ -3787,23 +2632,14 @@ fn index_toplist_artist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/toplist/detail")]
-fn index_toplist_detail(req: HttpRequest) -> impl Responder {
+async fn index_toplist_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist/detail";
     let info = QueryParams::from("");
     let cookies = req.cookies().unwrap();
@@ -3811,23 +2647,14 @@ fn index_toplist_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "linuxapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/user/audio")]
-fn index_user_audio(req: HttpRequest) -> impl Responder {
+async fn index_user_audio(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/djradio/get/byuser";
     let info = QueryParams::from(req.query_string())
         .replace_key("uid", "userId");
@@ -3836,24 +2663,15 @@ fn index_user_audio(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 
 #[get("/user/cloud")]
-fn index_user_cloud(req: HttpRequest) -> impl Responder {
+async fn index_user_cloud(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/cloud/get";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -3861,23 +2679,14 @@ fn index_user_cloud(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("user/cloud/del")]
-fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
+async fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
     let url = "http://music.163.com/weapi/cloud/del";
     let query = QueryParams::from(req.query_string())
         .replace_key("id", "songIds");
@@ -3889,23 +2698,14 @@ fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/user/cloud/detail")]
-fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
+async fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/cloud/get/byids";
     let query = QueryParams::from(req.query_string());
     let queryValue = query.value("id").unwrap();
@@ -3918,23 +2718,14 @@ fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/user/detail")]
-fn index_user_detail(req: HttpRequest) -> impl Responder {
+async fn index_user_detail(req: HttpRequest) -> impl Responder {
     let url = format!("https://music.163.com/weapi/v1/user/detail/{}",
         QueryParams::from(req.query_string()).value("uid").unwrap()
     );
@@ -3944,24 +2735,15 @@ fn index_user_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 
 #[get("/user/dj")]
-fn index_user_dj(req: HttpRequest) -> impl Responder {
+async fn index_user_dj(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let url = format!("https://music.163.com/weapi/dj/program/{}",
         query.value("uid").unwrap()
@@ -3977,23 +2759,14 @@ fn index_user_dj(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/user/event")]
-fn index_user_event(req: HttpRequest) -> impl Responder {
+async fn index_user_event(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let url = format!("https://music.163.com/weapi/event/get/{}",
         query.value("uid").unwrap()
@@ -4011,23 +2784,14 @@ fn index_user_event(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/user/followeds")]
-fn index_user_followeds(req: HttpRequest) -> impl Responder {
+async fn index_user_followeds(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let uid = query.value("uid").unwrap();
     let url = format!("https://music.163.com/eapi/user/getfolloweds/{}",
@@ -4045,23 +2809,14 @@ fn index_user_followeds(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/user/follows")]
-fn index_user_follows(req: HttpRequest) -> impl Responder {
+async fn index_user_follows(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let url = format!("https://music.163.com/weapi/user/getfollows/{}",
         query.value("uid").unwrap()
@@ -4077,23 +2832,14 @@ fn index_user_follows(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/user/playlist")]
-fn index_user_playlist(req: HttpRequest) -> impl Responder {
+async fn index_user_playlist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/user/playlist";
     let info = QueryParams::from(
         QueryParams::from(req.query_string())
@@ -4103,23 +2849,14 @@ fn index_user_playlist(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/user/record")]
-fn index_user_record(req: HttpRequest) -> impl Responder {
+async fn index_user_record(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/v1/play/record";
     let info = QueryParams::from(
         QueryParams::from(req.query_string())
@@ -4129,46 +2866,29 @@ fn index_user_record(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/user/subcount")]
-fn index_user_subcount(req: HttpRequest) -> impl Responder {
+async fn index_user_subcount(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/subcount";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("");
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from(""),
-                &params
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/user/update")]
-fn index_user_update(req: HttpRequest) -> impl Responder {
+async fn index_user_update(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/user/profile/update";
     let query = QueryParams::from(req.query_string());
     let info = urlqstring::proto_object!({
@@ -4185,23 +2905,14 @@ fn index_user_update(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/video/detail")]
-fn index_video_detail(req: HttpRequest) -> impl Responder {
+async fn index_video_detail(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/v1/video/detail";
     let info = QueryParams::from(req.query_string());
     let cookies = req.cookies().unwrap();
@@ -4209,23 +2920,14 @@ fn index_video_detail(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/video/group")]
-fn index_video_group(req: HttpRequest) -> impl Responder {
+async fn index_video_group(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/videotimeline/videogroup/get";
     let query = QueryParams::from(req.query_string());
     let info = urlqstring::proto_object!({
@@ -4239,46 +2941,29 @@ fn index_video_group(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
 #[get("/video/group/list")]
-fn index_video_group_list(req: HttpRequest) -> impl Responder {
+async fn index_video_group_list(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/api/cloudvideo/group/list";
     let cookies = req.cookies().unwrap();
     let cookies = cookies.to_hashmap();
+    let info = QueryParams::from("");
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &QueryParams::from(""),
-                &params
-            )
-        )
+    handle_request(url, info, params, "POST").await
 }
 
 #[get("/video/sub")]
-fn index_video_sub(req: HttpRequest) -> impl Responder {
+async fn index_video_sub(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let url = format!("https://music.163.com/weapi/cloudvideo/video/{}",
         query.value("t").unwrap()
@@ -4291,23 +2976,14 @@ fn index_video_sub(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .body(
-            api::create_request(
-                "POST",
-                &url,
-                &info,
-                &params
-            )
-        )
+    handle_request(&url, info, params, "POST").await
 }
 
 #[get("/video/url")]
-fn index_video_url(req: HttpRequest) -> impl Responder {
+async fn index_video_url(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/cloudvideo/playurl";
     let query = QueryParams::from(req.query_string());
     let info = urlqstring::proto_object!({
@@ -4320,22 +2996,13 @@ fn index_video_url(req: HttpRequest) -> impl Responder {
     let params = RequestParams {
         ua: "",
         crypto: "weapi",
-        cookies: cookies,
+        cookies,
         url: None
     };
-    HttpResponse::Ok()
-        .content_type(CONTENT_TP)
-        .json(
-            api::create_request(
-                "POST",
-                url,
-                &info,
-                &params
-            )
-        )
+    handle_request( url, info, params, "POST").await
 }
 
-pub fn start_server() {
+pub async fn start_server() -> std::io::Result<()> {
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(|| {
         App::new()
@@ -4500,11 +3167,11 @@ pub fn start_server() {
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l).unwrap()
     } else {
-        dbg!("server runing @ http://127.0.0.1:3000");
-        server.bind("127.0.0.1:3000").unwrap()
+        dbg!("server runing @ http://127.0.0.1:8000");
+        server.bind("127.0.0.1:8000")?
     };
 
-    server.run().unwrap();
+    server.run().await
 }
 
 #[cfg(test)]
