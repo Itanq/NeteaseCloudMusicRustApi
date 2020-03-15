@@ -1,28 +1,21 @@
 [package]
-name = "NeteaseCloudMusicRustApi"
-version = "0.2.0"
+name = "RustNeteaseCloudMusicApi"
+version = "0.1.0"
 authors = ["zmant <zmant724@aliyun.com>"]
-license-file = "LICENSE"
 edition = "2018"
-description = "Rust implementation of NeteaseCloud music API."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-rt = "1.0"
 actix-web = "2.0"
-actix-http = "1.0"
-actix-files = "0.2"
-reqwest = { version = "0.10", features = ["json", "blocking", "cookies"] }
-rand = { version = "0.7" }
-base64 = "0.11"
-openssl = "0.10"
+actix-rt = "1.0.0"
+base64 = "0.12"
 hex = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-futures-channel-preview="0.3.0-alpha.19"
-tokio = "0.2.0-alpha.6"
-futures = "0.3"
-urlqstring = "0.3"
-listenfd = "0.3"
 lazy_static = "1.4"
-time = "0.1.42"
-
+openssl = "0.10"
+rand = "0.7"
+regex = "1.3.5"
+reqwest = "0.10.4"
+serde = "1.0"
+serde_json = "1.0"
+urlqstring = { path = "../urlqstring" }
