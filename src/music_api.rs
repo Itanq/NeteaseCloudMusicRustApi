@@ -1,6 +1,8 @@
 
 use actix_web::{HttpResponse, HttpServer, HttpRequest, Responder, HttpMessage, get, web, App};
 use urlqstring::QueryParams;
+use percent_encoding::percent_decode_str;
+use std::borrow::Cow;
 
 use crate::request::generate_response;
 
@@ -41,7 +43,11 @@ pub(crate) async fn index_search(req: HttpRequest) -> impl Responder {
     });
     println!("cookies={}", cookies);
 
-    let query_string = QueryParams::from(req.query_string());
+
+    let qs = percent_decode_str(req.query_string())
+        .decode_utf8().unwrap_or(Cow::Borrowed(&""));
+
+    let query_string = QueryParams::from(qs.as_ref());
 
     let query_params = json_object!({
         "s": query_string.value("keywords").unwrap_or(""),
