@@ -4,7 +4,70 @@ use urlqstring::QueryParams;
 use percent_encoding::percent_decode_str;
 use std::borrow::Cow;
 
+use crate::crypto::{Crypto, HashType};
+
 use crate::request::generate_response;
+
+#[get("/login/cellphone")]
+pub(crate) async fn index_login_cellphone(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/login/cellphone";
+    let cookies = req.cookies().unwrap().iter().fold(String::from(""),|acc,val| {
+        val.to_string() + &acc
+    });
+    println!("cookies={}", cookies);
+    let query_string = QueryParams::from(req.query_string());
+    let pw = Crypto::hash_encrypt(
+        query_string.value("password").unwrap(),
+        HashType::md5,
+        hex::encode
+    );
+
+    let query_params = json_object!({
+        "phone": query_string.value("phone").unwrap(),
+        "countrycode": query_string.value("countrycode").unwrap_or("86"),
+        "password": &pw,
+        "rememberLogin": "true",
+    });
+
+    let request_params = json_object!({
+        "crypto": "weapi",
+        "ua": "pc",
+        "cookie": &cookies,
+        "proxy": ""
+    });
+
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
+
+#[get("/login/refresh")]
+pub(crate) async fn index_login_refresh(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/login/token/refresh";
+    let cookies = req.cookies().unwrap().iter().fold(String::from(""),|acc,val| {
+        val.to_string() + ";" + &acc
+    });
+    println!("cookies={}", cookies);
+
+    let query_params = json_object!({});
+
+    let request_params = json_object!({
+        "crypto": "weapi",
+        "ua": "pc",
+        "cookie": &cookies,
+        "proxy": ""
+    });
+
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
 
 #[get("/song/url")]
 pub(crate) async fn index_song_url(req: HttpRequest) -> impl Responder {

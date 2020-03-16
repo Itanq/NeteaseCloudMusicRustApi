@@ -6,6 +6,8 @@ use crate::music_api::*;
 pub(crate) async fn start_server() -> std::io::Result<()> {
     let server = HttpServer::new(|| {
         App::new()
+            .service(index_login_cellphone)
+            .service(index_login_refresh)
             .service(index_search)
             .service(index_song_url)
     });

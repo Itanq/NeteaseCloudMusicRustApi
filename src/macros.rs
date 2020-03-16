@@ -43,6 +43,10 @@ macro_rules! json_object_internal {
             map
         }
     };
+
+    ({ }) => {
+        std::collections::HashMap::new()
+    };
 }
 
 #[test]

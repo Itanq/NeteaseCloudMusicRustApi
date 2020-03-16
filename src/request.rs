@@ -152,19 +152,16 @@ async fn handle_request(
     let empty_cookie = HeaderValue::from_static("");
     let cookie = headers.get(COOKIE)
         .unwrap_or(&empty_cookie)
-        .to_str();
+        .to_str().unwrap();
 
     let body = match crypto {
         &"weapi" => {
-            let csrf_token = if let Ok(ck) = cookie {
-                if let Some(caps) = _CSRF.captures(ck) {
-                    caps.name("csrf").unwrap().as_str()
-                } else {
-                    ""
-                }
+            let csrf_token = if let Some(caps) = _CSRF.captures(cookie) {
+                caps.name("csrf").unwrap().as_str()
             } else {
                 ""
             };
+
             let mut _params = query_params;
             _params.insert("csrf_token", csrf_token);
             Crypto::weapi(&QueryParams::from_map( _params ).json())
@@ -177,7 +174,7 @@ async fn handle_request(
                 QueryParams::from_map(query_params).json());
             url = "https://music.163.com/api/linux/forward";
             Crypto::linuxapi(&data)
-        }
+        },
         _ => String::from("")
     };
 
