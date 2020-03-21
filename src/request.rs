@@ -195,20 +195,27 @@ async fn handle_request(
 
 async fn handle_response(response: reqwest::Response) -> impl actix_web::Responder {
     let mut res_builder = actix_web::HttpResponse::Ok();
-    res_builder.status(response.status()).keep_alive();
+    res_builder.status(response.status())
+        .content_length(response.content_length().unwrap_or(0))
+        .keep_alive();
 
     let headers = response.headers();
-//    奇怪，如下代码不会有任何输出！！！！！！
-//    headers.keys().map(|key| {
-//        println!("key={:?}; val={:?}", key, headers.get(key).unwrap().to_str().unwrap());
-//        res_builder.set_header(key, headers.get(key).unwrap().to_str().unwrap());
-//    });
+
+    let set_cookies = headers.get_all("set-cookie");
+
+    let mut cookies_iter = set_cookies.iter();
+    while let Some(val) = cookies_iter.next() {
+        res_builder.header("set-cookie", val.to_str().unwrap());
+    }
 
     for key in headers.keys() {
-        //println!("1111; key={:?}; val={:?}", key, headers.get(key).unwrap().to_str().unwrap());
+        if key == "set-cookie" {
+            continue;
+        }
         res_builder.header(key, headers.get(key).unwrap().to_str().unwrap());
     }
 
+    println!("response::headers: {:?}", res_builder);
     res_builder.body(
         response.text().await.unwrap()
     )
