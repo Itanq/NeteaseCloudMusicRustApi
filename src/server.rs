@@ -88,6 +88,7 @@ pub(crate) async fn start_server() -> std::io::Result<()> {
             .service(index_playlist_create)
             .service(index_playlist_delete)
             .service(index_playlist_desc_update)
+            .service(index_playlist_detail)
             .service(index_playlist_hot)
             .service(index_playlist_name_update)
             .service(index_playlist_subscribe)
