@@ -1969,7 +1969,7 @@ pub(crate) async fn index_video_sub(req: HttpRequest) -> impl Responder {
 pub(crate) async fn index_video_url(req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
     let url = "https://music.163.com/weapi/cloudvideo/playurl";
-    let ids = r#"[""#.to_owned() + query.value("id").unwrap() + r#""]"#;
+    let ids = r#"[\""#.to_owned() + query.value("id").unwrap() + r#"\"]"#;
     let query_params = json_object!({
         "ids": &ids[..],
         "resolution": query.value("res").unwrap_or("1080"),

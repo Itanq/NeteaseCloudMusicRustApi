@@ -55,7 +55,7 @@ impl Crypto {
     }
 
     pub fn weapi(text: &str) -> String {
-        println!("text={:?}", text);
+        println!("text={}", text);
         let mut secret_key = [0u8; 16];
         OsRng.fill_bytes(&mut secret_key);
         let key: Vec<u8> = secret_key.iter().map(|i| {
