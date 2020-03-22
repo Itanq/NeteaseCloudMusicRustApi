@@ -951,7 +951,7 @@ pub(crate) async fn index_mv_detail(req: HttpRequest) -> impl Responder {
 }
 
 #[get("/mv/exclusive/rcmd")]
-pub(crate) async fn index_exclusive_rcmd(req: HttpRequest) -> impl Responder {
+pub(crate) async fn index_mv_exclusive_rcmd(req: HttpRequest) -> impl Responder {
     let url = "https://interface.music.163.com/api/mv/exclusive/rcmd";
     let query = QueryParams::from(req.query_string());
     let query_params = json_object!({
@@ -1009,6 +1009,264 @@ pub(crate) async fn index_mv_url(req: HttpRequest) -> impl Responder {
     let query_params = json_object!({
         "id": query.value("id").unwrap(),
         "r": query.value("res").unwrap_or("1080"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/personal/fm")]
+pub(crate) async fn index_personal_fm(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v1/radio/get";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/personalized/djprogram")]
+pub(crate) async fn index_personalized_djprogram(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/personalized/djprogram";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/personalized/mv")]
+pub(crate) async fn index_personalized_mv(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/personalized/mv";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/personalized/newsong")]
+pub(crate) async fn index_personalized_newsong(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/personalized/newsong";
+    let query_params = json_object!({
+        "type": "recommend",
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/personalized/privatecontent")]
+pub(crate) async fn index_personalized_privatecontent(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/personalized/privatecontent";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/personalized")]
+pub(crate) async fn index_personalized(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/personalized/playlist";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "limit": query.value("limit").unwrap_or("30"),
+        "total": "true",
+        "n": "1000",
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/catlist")]
+pub(crate) async fn index_playlist_catlist(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/catalogue";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/playlist/create")]
+pub(crate) async fn index_playlist_create(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/create";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "name": query.value("name").unwrap(),
+        "privacy": query.value("privacy").unwrap(),
+    });
+    let cookies = get_cookie_string(&req) + ";os=pc;";
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/delete")]
+pub(crate) async fn index_playlist_delete(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/delete";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "pid": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req) + ";os=pc;";
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/desc_update")]
+pub(crate) async fn index_playlist_desc_update(req: HttpRequest) -> impl Responder {
+    let url = "http://interface3.music.163.com/eapi/playlist/desc/update";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "pid": query.value("id").unwrap(),
+        "desc": query.value("desc").unwrap(),
+    });
+    let cookies = get_cookie_string(&req) + ";os=pc;";
+    let request_params = json_object!({
+        "crypto": "eapi",
+        "cookie": &cookies,
+        "proxy": "",
+        "url": "/api/playlist/desc/update",
+    });
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
+
+#[get("/playlist/detail")]
+pub(crate) async fn index_playlist_detail(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v3/playlist/detail";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+        "n": "100000",
+        "s": query.value("s").unwrap_or("8"),
+    });
+    let cookies = get_cookie_string(&req) + ";os=pc;";
+    request_handler(url, "linuxapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/hot")]
+pub(crate) async fn index_playlist_hot(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/hottags";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/playlist/name/update")]
+pub(crate) async fn index_playlist_name_update(req: HttpRequest) -> impl Responder {
+    let url = "http://interface3.music.163.com/eapi/playlist/update/name";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+        "name": query.value("name").unwrap(),
+    });
+    let cookies = get_cookie_string(&req) + ";os=pc;";
+    let request_params = json_object!({
+        "crypto": "eapi",
+        "cookie": &cookies,
+        "proxy": "",
+        "url": "/api/playlist/update/name",
+    });
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
+
+#[get("/playlist/subscribe")]
+pub(crate) async fn index_playlist_subscribe(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let _t = if query.value("t").unwrap_or("0") == "1" { "subscribe" } else { "unsubscribe" };
+    let url = &format!("https://music.163.com/weapi/playlist/{}", _t);
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/subscribers")]
+pub(crate) async fn index_playlist_subscribers(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/subscribers";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+        "limit": query.value("limit").unwrap_or("20"),
+        "offset": query.value("offset").unwrap_or("0"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/tags/update")]
+pub(crate) async fn index_playlist_tags_update(req: HttpRequest) -> impl Responder {
+    let url = "http://interface3.music.163.com/eapi/playlist/tags/update";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+        "tags": query.value("tags").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    let request_params = json_object!({
+        "crypto": "eapi",
+        "cookie": &cookies,
+        "proxy": "",
+        "url": "/api/playlist/tags/update",
+    });
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
+
+#[get("/playlist/tracks")]
+pub(crate) async fn index_playlist_tracks(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/playlist/manipulate/tracks";
+    let query = QueryParams::from(req.query_string());
+    let ids = "[".to_owned() + query.value("trakcs").unwrap() + "]";
+    let query_params = json_object!({
+        "op": query.value("op").unwrap(),
+        "pid": query.value("pid").unwrap_or("20"),
+        "tackIds": &ids,
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playlist/update")]
+pub(crate) async fn index_playlist_update(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/batch";
+    let query = QueryParams::from(req.query_string());
+    let _id = query.value("id").unwrap();
+    let _desc = format!(r#"{{"id":{},"desc":"{}"}}"#,
+        _id,
+        query.value("desc").unwrap_or(""),
+    );
+    let _tags = format!(r#"{{"id":{},"tags":"{}"}}"#,
+        _id,
+        query.value("tags").unwrap_or(""),
+    );
+    let _name = format!(r#"{{"id":{},"name":"{}"}}"#,
+        _id,
+        query.value("name").unwrap_or("")
+    );
+    let query_params = json_object!({
+        "/api/playlist/desc/update": &_desc[..],
+        "/api/playlist/tags/update": &_tags[..],
+        "/api/playlist/update/name": &_name[..],
+    });
+    let cookies = get_cookie_string(&req) + "os=pc;";
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/playmode/intelligence/list")]
+pub(crate) async fn index_playmode_intelligence_list(req: HttpRequest) -> impl Responder {
+    let url = "http://music.163.com/weapi/playmode/intelligence/list";
+    let query = QueryParams::from(req.query_string());
+    let ids = "[".to_owned() + query.value("trakcs").unwrap() + "]";
+    let query_params = json_object!({
+        "songId": query.value("id").unwrap(),
+        "type": "fromPlayOne",
+        "playlistId": query.value("pid").unwrap(),
+        "startMusicId": query.value("sid").unwrap_or(query.value("id").unwrap()),
+        "count": query.value("count").unwrap_or("1"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/program/recommend")]
+pub(crate) async fn index_program_recommend(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/program/recommend/v1";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "cateId": query.value("type").unwrap(),
+        "limit": query.value("limit").unwrap_or("10"),
+        "offset": query.value("offset").unwrap_or("0"),
     });
     let cookies = get_cookie_string(&req);
     request_handler(url, "weapi", query_params, &cookies, &req).await
