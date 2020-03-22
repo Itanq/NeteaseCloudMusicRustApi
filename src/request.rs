@@ -196,7 +196,7 @@ async fn handle_request(
 async fn handle_response(response: reqwest::Response) -> impl actix_web::Responder {
     let mut res_builder = actix_web::HttpResponse::Ok();
     res_builder.status(response.status())
-        .content_length(response.content_length().unwrap_or(0))
+        //.content_length(response.content_length().unwrap_or(0))
         .keep_alive();
 
     let headers = response.headers();

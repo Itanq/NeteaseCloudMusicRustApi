@@ -1757,3 +1757,229 @@ pub(crate) async fn index_toplist(req: HttpRequest) -> impl Responder {
     let url = "https://music.163.com/weapi/toplist";
     empty_query_params_handler(url, "weapi", req).await
 }
+
+#[get("/user/audio")]
+pub(crate) async fn index_user_audio(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/djradio/get/byuser";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "userId": query.value("uid").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/cloud/del")]
+pub(crate) async fn index_user_cloud_del(req: HttpRequest) -> impl Responder {
+    let url = "http://music.163.com/weapi/cloud/del";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "songIds": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/cloud/detail")]
+pub(crate) async fn index_user_cloud_detail(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v1/cloud/get/byids";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "songIds": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/cloud")]
+pub(crate) async fn index_user_cloud(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v1/cloud/get";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "limit": query.value("limit").unwrap_or("30"),
+        "offset": query.value("offset").unwrap_or("0"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/detail")]
+pub(crate) async fn index_user_detail(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = &format!("https://music.163.com/weapi/v1/user/detail/{}", query.value("uid").unwrap());
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/user/dj")]
+pub(crate) async fn index_user_dj(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = &format!("https://music.163.com/weapi/dj/program/{}", query.value("uid").unwrap());
+    let query_params = json_object!({
+        "limit": query.value("limit").unwrap_or("30"),
+        "offset": query.value("offset").unwrap_or("0"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/event")]
+pub(crate) async fn index_user_event(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = &format!("https://music.163.com/weapi/event/get/{}", query.value("uid").unwrap());
+    let query_params = json_object!({
+        "getcounts": "true",
+        "time": query.value("lasttime").unwrap_or("-1"),
+        "limit": query.value("limit").unwrap_or("30"),
+        "total": "true",
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/followeds")]
+pub(crate) async fn index_user_followeds(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = &format!("https://music.163.com/eapi/user/getfolloweds/{}", query.value("uid").unwrap());
+    let query_params = json_object!({
+        "userId": query.value("uid").unwrap(),
+        "time": query.value("lasttime").unwrap_or("-1"),
+        "limit": query.value("limit").unwrap_or("30"),
+    });
+    let cookies = get_cookie_string(&req);
+    let request_params = json_object!({
+        "crypto": "eapi",
+        "cookie": &cookies,
+        "proxy": "",
+        "url": "/api/user/getfolloweds",
+    });
+
+    generate_response(
+        url,
+        "POST",
+        query_params,
+        request_params
+    ).await
+}
+
+#[get("/user/follows")]
+pub(crate) async fn index_user_follows(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = &format!("https://music.163.com/weapi/user/getfollows/{}", query.value("uid").unwrap());
+    let query_params = json_object!({
+        "offset": query.value("offset").unwrap_or("0"),
+        "limit": query.value("limit").unwrap_or("30"),
+        "order": "true",
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/playlist")]
+pub(crate) async fn index_user_playlist(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/user/playlist";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "uid": query.value("uid").unwrap(),
+        "limit": query.value("limit").unwrap_or("30"),
+        "offset": query.value("offset").unwrap_or("0"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/record")]
+pub(crate) async fn index_user_record(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/v1/play/record";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "uid": query.value("uid").unwrap(),
+        "type": query.value("type").unwrap_or("1"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/user/subcount")]
+pub(crate) async fn index_user_subcount(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/subcount";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/user/update")]
+pub(crate) async fn index_user_update(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/user/profile/update";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "avatarImgId": "0",
+        "birthday": query.value("birthday").unwrap(),
+        "city": query.value("city").unwrap(),
+        "gender": query.value("gender").unwrap(),
+        "nickname": query.value("nickname").unwrap(),
+        "province": query.value("province").unwrap(),
+        "signature": query.value("signature").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/video/detail")]
+pub(crate) async fn index_video_detail(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/cloudvideo/v1/video/detail";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/video/group/list")]
+pub(crate) async fn index_video_group_list(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/api/cloudvideo/group/list";
+    empty_query_params_handler(url, "weapi", req).await
+}
+
+#[get("/video/group")]
+pub(crate) async fn index_video_group(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/videotimeline/videogroup/get";
+    let query = QueryParams::from(req.query_string());
+    let query_params = json_object!({
+        "groupId": query.value("id").unwrap(),
+        "offset": query.value("offset").unwrap_or("0"),
+        "needUrl": "true",
+        "resolution": query.value("res").unwrap_or("1080"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/video/sub")]
+pub(crate) async fn index_video_sub(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let _t = if query.value("t").unwrap_or("0") == "1" { "sub" } else { "unsub" };
+    let url = &format!("https://music.163.com/weapi/cloudvideo/video/{}", _t);
+    let query_params = json_object!({
+        "id": query.value("id").unwrap(),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/video/url")]
+pub(crate) async fn index_video_url(req: HttpRequest) -> impl Responder {
+    let query = QueryParams::from(req.query_string());
+    let url = "https://music.163.com/weapi/cloudvideo/playurl";
+    let ids = r#"[""#.to_owned() + query.value("id").unwrap() + r#""]"#;
+    let query_params = json_object!({
+        "ids": &ids[..],
+        "resolution": query.value("res").unwrap_or("1080"),
+    });
+    let cookies = get_cookie_string(&req);
+    request_handler(url, "weapi", query_params, &cookies, &req).await
+}
+
+#[get("/weblog")]
+pub(crate) async fn index_weblog(req: HttpRequest) -> impl Responder {
+    let url = "https://music.163.com/weapi/feedback/weblog";
+    empty_query_params_handler(url, "weapi", req).await
+}

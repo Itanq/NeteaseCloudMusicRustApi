@@ -132,6 +132,19 @@ pub(crate) async fn start_server() -> std::io::Result<()> {
             .service(index_toplist_artist)
             .service(index_toplist_detail)
             .service(index_toplist)
+            .service(index_user_audio)
+            .service(index_user_cloud_del)
+            .service(index_user_cloud_detail)
+            .service(index_user_record)
+            .service(index_user_update)
+            .service(index_user_subcount)
+            .service(index_user_update)
+            .service(index_video_detail)
+            .service(index_video_group_list)
+            .service(index_video_group)
+            .service(index_video_sub)
+            .service(index_video_url)
+            .service(index_weblog)
     });
 
     server.bind("localhost:8000")?.run().await
