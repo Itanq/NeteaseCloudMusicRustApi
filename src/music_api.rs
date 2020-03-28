@@ -248,7 +248,7 @@ pub(crate) async fn index_banner(req: HttpRequest) -> impl Responder {
     });
 
     let cookies = get_cookie_string(&req);
-    request_handler(url, "weapi", query_params, &cookies, &req).await
+    request_handler(url, "linuxapi", query_params, &cookies, &req).await
 }
 
 #[get("/check/music")]

@@ -196,7 +196,7 @@ async fn handle_request(
 async fn handle_response(response: reqwest::Response) -> impl actix_web::Responder {
     let mut res_builder = actix_web::HttpResponse::Ok();
     res_builder.status(response.status())
-        //.content_length(response.content_length().unwrap_or(0))
+        .content_type("application/json; charset=utf-8")
         .keep_alive();
 
     let headers = response.headers();
@@ -208,16 +208,9 @@ async fn handle_response(response: reqwest::Response) -> impl actix_web::Respond
         res_builder.header("set-cookie", val.to_str().unwrap());
     }
 
-    for key in headers.keys() {
-        if key == "set-cookie" {
-            continue;
-        }
-        res_builder.header(key, headers.get(key).unwrap().to_str().unwrap());
-    }
-
     println!("response::headers: {:?}", res_builder);
-    res_builder.body(
-        response.text().await.unwrap()
+    res_builder.json(
+        response.json::<serde_json::value::Value>().await.unwrap()
     )
 }
 
