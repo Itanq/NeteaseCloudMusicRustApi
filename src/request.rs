@@ -17,6 +17,7 @@ use crate::crypto::Crypto;
 
 lazy_static!{
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
+    static ref DOMAIN: Regex = Regex::new(r#"\s*Domain=[^(;|$)]+;*"#).unwrap();
 }
 
 pub const BANNER_TYPE: [&str; 4] = [
@@ -205,7 +206,7 @@ async fn handle_response(response: reqwest::Response) -> impl actix_web::Respond
 
     let mut cookies_iter = set_cookies.iter();
     while let Some(val) = cookies_iter.next() {
-        res_builder.header("set-cookie", val.to_str().unwrap());
+        res_builder.header("set-cookie", DOMAIN.replace(val.to_str().unwrap(),"").as_ref());
     }
 
     println!("response::headers: {:?}", res_builder);
