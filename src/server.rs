@@ -146,6 +146,9 @@ pub(crate) async fn start_server() -> std::io::Result<()> {
             .service(index_video_sub)
             .service(index_video_url)
             .service(index_weblog)
+            .service(
+                actix_files::Files::new("/", "./public/").index_file("index.html")
+            )
     });
 
     server.bind("localhost:8000")?.run().await
