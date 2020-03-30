@@ -7,12 +7,14 @@ mod music_api;
 mod request;
 mod server;
 
-use crate::server::start_server;
+use structopt::StructOpt;
+use crate::server::{
+    Opt,
+    start_server
+};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-
-    println!("Hello World!\n Start...");
-
-    start_server().await
+    let opt = Opt::from_args();
+    start_server(&opt).await
 }

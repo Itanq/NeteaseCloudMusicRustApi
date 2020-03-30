@@ -1,11 +1,28 @@
 
-use actix_web::{HttpServer, App, Resource, web, HttpResponse, get};
+use actix_web::{
+    middleware::Logger,
+    HttpServer, App, Resource, web, HttpResponse,
+    get
+};
+use structopt::StructOpt;
 
 use crate::music_api::*;
 
-pub(crate) async fn start_server() -> std::io::Result<()> {
+#[derive(Debug, StructOpt)]
+#[structopt(name = "RustNeteaseCloudMusicApi", about = "A Netease Cloud Music Rust API Service")]
+pub(crate) struct Opt {
+    #[structopt(long, default_value = "localhost")]
+    ip: String,
+
+    #[structopt(short, long, default_value = "8000")]
+    port: i32
+}
+
+pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
     let server = HttpServer::new(|| {
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %t %s"))
             .service(index_album_detail_dynamic)
             .service(index_album_newest)
             .service(index_album_sub)
@@ -151,5 +168,5 @@ pub(crate) async fn start_server() -> std::io::Result<()> {
             )
     });
 
-    server.bind("localhost:8000")?.run().await
+    server.bind(format!("{}:{}", opt.ip, opt.port))?.run().await
 }
