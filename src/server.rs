@@ -168,5 +168,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             )
     });
 
+    println!("{}:{}", opt.ip, opt.port);
+
     server.bind(format!("{}:{}", opt.ip, opt.port))?.run().await
 }
